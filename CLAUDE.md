@@ -120,7 +120,7 @@ comments, a dark mode toggle, an onboarding tour, a PWA manifest, an i18n framew
 - [x] Phase 3 — Auth (magic link) and apartment claim
 - [x] Phase 4 — Booking grid (the main screen) + `src/lib/slotState.ts` with tests
 - [x] Phase 5 — History: last wash by apartment, 60-day log
-- [ ] Phase 6 — Admin: reassign apartment number, remove account
+- [x] Phase 6 — Admin: reassign apartment number, remove account
 
 Each phase is committed before the next one starts.
 
@@ -217,3 +217,16 @@ record it here rather than stopping to ask.
   booking is not listed as history. Apartment numbers are joined client-side from the
   apartments map rather than by PostgREST embedding, because `bookings` has three foreign
   keys to `apartments` and the disambiguating hint syntax is harder to read than a Map.
+- **There is no UI for making someone an admin**, deliberately — an admin screen that
+  can create admins is a way to lose control of the building's app. Set the first one by
+  migration: `update public.apartments set is_admin = true where number = <n>;`
+- The admin screen is hidden unless `is_admin`, but that is only tidiness. The check that
+  matters is `require_admin()` inside `admin_reassign_apartment` and
+  `admin_remove_account`, and it cannot be reached around.
+- `admin_remove_account` refuses to remove the caller's own account. The building may have
+  exactly one admin, and there is no way back in from inside the app.
+- Reassigning to an account that already holds another apartment is refused rather than
+  silently moved, because moving it would quietly leave an apartment unlinked.
+- The admin "reassign" flow has no unlink option. Removing the account frees the
+  apartment (`user_id` is `on delete set null`), which covers the move-out case without a
+  third operation — the spec says admin does these two things and nothing else.

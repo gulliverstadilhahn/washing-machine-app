@@ -14,9 +14,7 @@ export const strings = {
 
   common: {
     cancel: 'Cancel',
-    close: 'Close',
     loading: 'Loading…',
-    retry: 'Try again',
     signOut: 'Sign out',
     somethingWentWrong: 'Something went wrong. Try again.',
   },
@@ -57,8 +55,6 @@ export const strings = {
     free: 'Free',
     apartment: (number: number) => `Apt ${number}`,
     yours: 'You',
-    finished: 'Over',
-    inProgress: 'Now',
     claimable: 'Claimable',
     today: 'Today',
     tomorrow: 'Tomorrow',
@@ -123,11 +119,6 @@ export const strings = {
     logRetention: (days: number) =>
       `Nothing is ever deleted. This page shows the last ${days} days.`,
 
-    statusActive: 'booked',
-    statusCancelled: 'cancelled',
-    statusReleased: 'released',
-    statusTakenOver: 'taken over',
-
     /** e.g. "Apt 14 — taken over by apt 7 at 07:45" */
     logTakenOver: (apartmentNumber: number, byNumber: number, atTime: string) =>
       `Apt ${apartmentNumber} — taken over by apt ${byNumber} at ${atTime}`,
@@ -150,9 +141,6 @@ export const strings = {
     reassignEmailLabel: 'Email of the account to link',
     reassignSubmit: 'Move apartment',
     reassignDone: (number: number, email: string) => `Apartment ${number} is now linked to ${email}.`,
-    reassignUnlinkSubmit: 'Unlink this apartment',
-    reassignUnlinkDone: (number: number) =>
-      `Apartment ${number} is no longer linked to an account. Anyone can claim it.`,
 
     removeTitle: 'Remove an account',
     removeIntro:
@@ -161,7 +149,5 @@ export const strings = {
     removeSubmit: 'Remove account',
     removeConfirm: (email: string) => `Remove the account ${email}? This cannot be undone.`,
     removeDone: (email: string) => `Removed ${email}.`,
-
-    noAccount: 'No account with that email.',
   },
 } as const

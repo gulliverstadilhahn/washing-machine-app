@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Admin } from './components/Admin'
 import { BookingGrid } from './components/BookingGrid'
 import { ClaimApartment } from './components/ClaimApartment'
 import { History } from './components/History'
@@ -10,7 +11,7 @@ import type { Apartment } from './lib/types'
 import { useAuth } from './lib/useAuth'
 import { useNow } from './lib/useNow'
 
-type Tab = 'book' | 'history'
+type Tab = 'book' | 'history' | 'admin'
 
 export function App() {
   const { ready, session, apartment, reloadApartment } = useAuth()
@@ -41,13 +42,15 @@ export function App() {
   return <SignedIn now={now} apartment={apartment} />
 }
 
-// Phase 6 adds an Admin tab here, shown only when the apartment is_admin.
 function SignedIn({ now, apartment }: { now: Date; apartment: Apartment }) {
   const [tab, setTab] = useState<Tab>('book')
 
+  // The check that matters is inside the admin database functions. Hiding the
+  // tab is only tidiness.
   const tabs: Array<[Tab, string]> = [
     ['book', strings.nav.book],
     ['history', strings.nav.history],
+    ...(apartment.is_admin ? ([['admin', strings.nav.admin]] as Array<[Tab, string]>) : []),
   ]
 
   return (
@@ -57,6 +60,7 @@ function SignedIn({ now, apartment }: { now: Date; apartment: Apartment }) {
         <Screen>
           {tab === 'book' ? <BookingGrid now={now} apartment={apartment} /> : null}
           {tab === 'history' ? <History now={now} /> : null}
+          {tab === 'admin' && apartment.is_admin ? <Admin /> : null}
 
           <button
             type="button"
