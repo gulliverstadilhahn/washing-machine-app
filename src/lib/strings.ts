@@ -120,6 +120,8 @@ export const strings = {
     logTitle: 'Log',
     logIntro: 'Everything from the last 60 days, newest first.',
     logEmpty: 'Nothing in the last 60 days.',
+    logRetention: (days: number) =>
+      `Nothing is ever deleted. This page shows the last ${days} days.`,
 
     statusActive: 'booked',
     statusCancelled: 'cancelled',

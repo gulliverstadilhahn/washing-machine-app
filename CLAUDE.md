@@ -119,7 +119,7 @@ comments, a dark mode toggle, an onboarding tour, a PWA manifest, an i18n framew
 - [x] Phase 2 — Database: migrations, RLS, RPC functions, `supabase/tests/rules.sql`
 - [x] Phase 3 — Auth (magic link) and apartment claim
 - [x] Phase 4 — Booking grid (the main screen) + `src/lib/slotState.ts` with tests
-- [ ] Phase 5 — History: last wash by apartment, 60-day log
+- [x] Phase 5 — History: last wash by apartment, 60-day log
 - [ ] Phase 6 — Admin: reassign apartment number, remove account
 
 Each phase is committed before the next one starts.
@@ -203,3 +203,17 @@ record it here rather than stopping to ask.
   via `Intl`, rather than pulling in a date library. Its tests run under
   `TZ=America/Los_Angeles` in CI terms — they assert absolute instants, so they fail if
   anything starts trusting the host timezone.
+- **"Last wash" counts only bookings that have already started.** The spec says "most
+  recent booking that was not cancelled"; an upcoming booking is not a wash, and counting
+  it would make an apartment look recently active when it has not washed for months —
+  the opposite of what the section is for. `released` and `taken_over` bookings do count,
+  as the spec says: only `cancelled` is excluded.
+- Apartments that have never washed sort to the very top of "Last wash", above the
+  longest-ago washers. They are the extreme case of the thing the list is looking for.
+- `last_wash_by_apartment` is a `security_invoker` view, so it is read under the caller's
+  RLS rather than the view owner's. A plain view would have been a way around the
+  policies even though the policies currently allow reading everything.
+- The log covers bookings whose **date** falls in the last 60 days, so an upcoming
+  booking is not listed as history. Apartment numbers are joined client-side from the
+  apartments map rather than by PostgREST embedding, because `bookings` has three foreign
+  keys to `apartments` and the disambiguating hint syntax is harder to read than a Map.
