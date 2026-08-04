@@ -117,7 +117,7 @@ comments, a dark mode toggle, an onboarding tour, a PWA manifest, an i18n framew
 
 - [x] Phase 1 — `CLAUDE.md`
 - [x] Phase 2 — Database: migrations, RLS, RPC functions, `supabase/tests/rules.sql`
-- [ ] Phase 3 — Auth (magic link) and apartment claim
+- [x] Phase 3 — Auth (magic link) and apartment claim
 - [ ] Phase 4 — Booking grid (the main screen) + `src/lib/slotState.ts` with tests
 - [ ] Phase 5 — History: last wash by apartment, 60-day log
 - [ ] Phase 6 — Admin: reassign apartment number, remove account
@@ -181,3 +181,10 @@ record it here rather than stopping to ask.
   so a phone travelling abroad still shows Copenhagen times.
 - "Claimable" in the UI is computed from a client clock that ticks every 30 s. The client
   is only deciding what to *offer*; the database re-checks R6 on every claim.
+- Tailwind v4 via `@tailwindcss/vite`, no `tailwind.config.js`. The one theme override is
+  `--default-transition-duration: 0s`, which turns off Tailwind's transitions globally
+  rather than relying on nobody adding an animation later.
+- No router. The app is three screens reached by a bottom tab bar and holds no state
+  worth putting in a URL, so a router would be a dependency earning nothing.
+- Shared UI primitives live in `src/components/ui.tsx`. Buttons and inputs are `min-h-14`
+  (56px) — the one-handed-with-a-basket constraint, applied in one place.

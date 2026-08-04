@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* Plain and legible, used one-handed while carrying a laundry basket.
+   No animations anywhere — see CLAUDE.md. */
+@theme {
+  --default-transition-duration: 0s;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  @apply bg-white text-slate-900 antialiased;
+}
+
+/* Tap targets stay big enough for a thumb. */
+button {
+  touch-action: manipulation;
+}
