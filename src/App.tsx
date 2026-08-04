@@ -1,12 +1,15 @@
+import { BookingGrid } from './components/BookingGrid'
 import { ClaimApartment } from './components/ClaimApartment'
 import { SignIn } from './components/SignIn'
 import { Note, Screen } from './components/ui'
 import { strings } from './lib/strings'
 import { supabase } from './lib/supabase'
 import { useAuth } from './lib/useAuth'
+import { useNow } from './lib/useNow'
 
 export function App() {
   const { ready, session, apartment, reloadApartment } = useAuth()
+  const now = useNow()
 
   if (!ready) {
     return (
@@ -30,19 +33,17 @@ export function App() {
     )
   }
 
-  // Phase 4 puts the booking grid here.
+  // Phase 5 adds History alongside this, and Phase 6 adds Admin.
   return (
     <Screen>
-      <div className="space-y-4 pt-10">
-        <Note>{strings.grid.subtitle(apartment.number)}</Note>
-        <button
-          type="button"
-          onClick={() => void supabase.auth.signOut()}
-          className="font-semibold text-slate-900 underline"
-        >
-          {strings.common.signOut}
-        </button>
-      </div>
+      <BookingGrid now={now} apartment={apartment} />
+      <button
+        type="button"
+        onClick={() => void supabase.auth.signOut()}
+        className="mt-6 w-full py-3 text-center text-base font-semibold text-slate-600 underline"
+      >
+        {strings.common.signOut}
+      </button>
     </Screen>
   )
 }

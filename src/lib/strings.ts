@@ -68,8 +68,10 @@ export const strings = {
     legendTaken: 'Booked',
     legendClaimable: 'Claimable',
     booking: 'Booking…',
-    nothingToDo: 'Nothing to do here.',
     slotOver: 'That slot is over.',
+    takenBy: (number: number) => `Apartment ${number} has booked this slot.`,
+    inGraceWindow:
+      'This slot is taken. If no wash is running, it can be claimed 30 minutes after it starts.',
     alreadyHaveFutureBooking:
       'You already have a booking coming up. Cancel it before booking another.',
     beyondHorizon: (days: number) => `You can only book up to ${days} days ahead.`,

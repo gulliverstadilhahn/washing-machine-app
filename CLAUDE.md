@@ -118,7 +118,7 @@ comments, a dark mode toggle, an onboarding tour, a PWA manifest, an i18n framew
 - [x] Phase 1 — `CLAUDE.md`
 - [x] Phase 2 — Database: migrations, RLS, RPC functions, `supabase/tests/rules.sql`
 - [x] Phase 3 — Auth (magic link) and apartment claim
-- [ ] Phase 4 — Booking grid (the main screen) + `src/lib/slotState.ts` with tests
+- [x] Phase 4 — Booking grid (the main screen) + `src/lib/slotState.ts` with tests
 - [ ] Phase 5 — History: last wash by apartment, 60-day log
 - [ ] Phase 6 — Admin: reassign apartment number, remove account
 
@@ -188,3 +188,18 @@ record it here rather than stopping to ask.
   worth putting in a URL, so a router would be a dependency earning nothing.
 - Shared UI primitives live in `src/components/ui.tsx`. Buttons and inputs are `min-h-14`
   (56px) — the one-handed-with-a-basket constraint, applied in one place.
+- The grid draws **today plus the whole horizon** (15 day headings), not 14, so the last
+  bookable day is reachable by scrolling. Showing exactly 14 would hide a day that
+  `book_slot` accepts.
+- Days are rendered as full-width rows rather than a 5-column grid. A column per slot on
+  a 375px screen gives 70px cells, which fails the one-handed-with-a-basket test.
+- Booking happens on the first tap, with no confirmation — it is undoable by cancelling.
+  Cancel and release do ask first: cancelling gives up a slot someone else may take
+  within seconds, and releasing is permanent in the record.
+- Cells that offer no action are still tappable and explain why (`blockedMessage`).
+  Disabling them would have silently swallowed the "clear message" the spec asks for
+  when R1 or R7 blocks a booking.
+- `src/lib/time.ts` resolves Copenhagen wall-clock times with a two-pass offset lookup
+  via `Intl`, rather than pulling in a date library. Its tests run under
+  `TZ=America/Los_Angeles` in CI terms — they assert absolute instants, so they fail if
+  anything starts trusting the host timezone.
