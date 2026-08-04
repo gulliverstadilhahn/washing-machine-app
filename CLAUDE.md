@@ -116,7 +116,7 @@ comments, a dark mode toggle, an onboarding tour, a PWA manifest, an i18n framew
 ## Phases
 
 - [x] Phase 1 — `CLAUDE.md`
-- [ ] Phase 2 — Database: migrations, RLS, RPC functions, `supabase/tests/rules.sql`
+- [x] Phase 2 — Database: migrations, RLS, RPC functions, `supabase/tests/rules.sql`
 - [ ] Phase 3 — Auth (magic link) and apartment claim
 - [ ] Phase 4 — Booking grid (the main screen) + `src/lib/slotState.ts` with tests
 - [ ] Phase 5 — History: last wash by apartment, 60-day log
@@ -129,11 +129,45 @@ Each phase is committed before the next one starts.
 Appended as work proceeds. If a design decision is unclear, take the simpler option and
 record it here rather than stopping to ask.
 
-- **Docker is not available on this machine, and the Supabase CLI was not installed
-  globally.** The CLI is added as a dev dependency (`npx supabase`). `supabase/tests/rules.sql`
-  is written and committed but has **not** been executed against a local database in
-  this session. Run it with a local stack (`npx supabase start && npx supabase db reset`,
-  then `psql` the test file) before trusting the rules end to end.
+- **Neither Docker nor `psql` is available on this machine**, and the Supabase CLI was
+  not installed globally (it is now a dev dependency — use `npx supabase`). This means
+  `supabase/tests/rules.sql` is written and committed but has **not been executed**
+  against a database in the session that wrote it. Nothing in `supabase/migrations/`
+  has been applied either. Before trusting the rules end to end, run:
+  ```
+  npx supabase start
+  npm run db:test
+  ```
+  Expect to fix small SQL slips on that first run.
+- **R1 only applies when the slot being booked is in the future.** R1 caps how many
+  *future* bookings an apartment holds, so taking a slot that is already running (R8)
+  is allowed even when the apartment already has its next wash booked — the same
+  reasoning the spec gives for exempting claims (R6). `book_slot` therefore guards its
+  R1 check with `v_starts_at > now()`.
+- **A booking whose slot has finished stays `active`.** There is no "completed" status
+  and nothing sweeps finished bookings — that would be a scheduled job, which is
+  forbidden. `active` means "this booking stands"; the timestamps say whether it is past,
+  running or upcoming. Consequently `release_booking` refuses a slot that is already over
+  (there is no remainder to free) and `cancel_booking` refuses one that has started.
+- **R2 is enforced by a trigger as well as by RLS.** `bookings_history_guard` rejects
+  deleting any booking whose slot has started, and rejects any update that changes who
+  held it, which slot it was, or when it ran. Only `status`, `ended_at` and
+  `taken_over_by_apartment_id` may move.
+- `apartments` rows are created by a seed migration, not self-service. `claim_apartment`
+  links a user to an apartment number that already exists; it does not invent apartments.
+  The seed creates apartments 1–24 — **adjust this to the real building** in a new
+  migration.
+- `apartments.user_id` is `on delete set null`, so removing an account leaves the
+  apartment and all its bookings intact with the holder still visible (R2).
+- `BOOKING_HORIZON_DAYS` exists twice: `public.booking_horizon_days()` in SQL (which is
+  authoritative and enforced) and `BOOKING_HORIZON_DAYS` in `src/lib/constants.ts` (which
+  only decides how many days the grid draws). Keep them equal. Fetching it at runtime was
+  the alternative and was rejected as more machinery than the problem deserves.
+- The R8 check in `rules.sql` needs a slot that really is in progress, so it runs only
+  between 07:00 and 22:00 Copenhagen time and prints `SKIP` otherwise. Bookings "in the
+  past" elsewhere in that script are inserted directly with crafted timestamps, because
+  `now()` cannot be moved; their `date`/`slot_index` columns are just labels there, since
+  every rule except `book_slot` keys off the timestamps.
 - Slot times are stored as a lookup in SQL (`slot_start_hour` = 7, 10, 13, 16, 19; every
   slot is 3 hours) rather than a separate `slots` table. Five fixed slots are part of the
   domain, not configuration.
