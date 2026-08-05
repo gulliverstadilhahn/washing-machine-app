@@ -6,15 +6,15 @@ import { Button, ErrorNote, Field, Heading, Note, Screen, TextInput } from './ui
 const t = strings.claimApartment
 
 /**
- * Shown once, after the first sign-in. An apartment number, name and phone are
- * the whole identity here — there are no profiles beyond this.
+ * The rare fallback screen: a session exists but isn't linked to an
+ * apartment. Normally NumberLogin claims the apartment as part of signing
+ * up; this only shows if that raced with someone else claiming the same
+ * number in between, or another account otherwise ended up without one.
  */
 export function ClaimApartment({
-  email,
   onClaimed,
   onSignOut,
 }: {
-  email: string
   onClaimed: () => Promise<void> | void
   onSignOut: () => void
 }) {
@@ -59,8 +59,6 @@ export function ClaimApartment({
     await onClaimed()
   }
 
-  const [before, after] = t.wrongAccount.split('{email}')
-
   return (
     <Screen>
       <form className="space-y-5 pt-10" onSubmit={submit}>
@@ -104,9 +102,7 @@ export function ClaimApartment({
         </Button>
 
         <p className="pt-2 text-center text-base text-slate-600">
-          {before}
-          <span className="font-semibold">{email}</span>
-          {after}{' '}
+          {t.wrongAccount}{' '}
           <button
             type="button"
             onClick={onSignOut}

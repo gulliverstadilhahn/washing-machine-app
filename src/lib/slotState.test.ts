@@ -32,6 +32,7 @@ function booking(overrides: Partial<SlotBooking> = {}): SlotBooking {
     apartmentId: NEIGHBOUR,
     apartmentNumber: 14,
     graceStartsAt: NOW,
+    isClaim: false,
     ...overrides,
   }
 }
@@ -108,7 +109,26 @@ describe('slotState', () => {
       expect(slotState(input({ booking: booking({ apartmentId: ME }) }))).toEqual({
         action: 'release',
         appearance: 'yours',
+        claimableAt: new Date(NOW.getTime() + minutes(30)),
       })
+    })
+
+    it('reassurance: a fresh mid-slot booking reports when it stops being protected', () => {
+      const state = slotState(input({ booking: booking({ apartmentId: ME, graceStartsAt: NOW }) }))
+      expect(state.claimableAt).toEqual(new Date(NOW.getTime() + minutes(30)))
+    })
+
+    it('R6 amendment: a booking obtained by claiming reports only a 15-minute window', () => {
+      const state = slotState(
+        input({ booking: booking({ apartmentId: ME, graceStartsAt: NOW, isClaim: true }) }),
+      )
+      expect(state.claimableAt).toEqual(new Date(NOW.getTime() + minutes(15)))
+    })
+
+    it('reassurance does not apply before the slot has started', () => {
+      const state = slotState(input({ ...future, booking: booking({ apartmentId: ME }) }))
+      expect(state.action).toBe('cancel')
+      expect(state.claimableAt).toBeUndefined()
     })
 
     it('offers nothing on your own booking once the slot is over', () => {
@@ -139,6 +159,7 @@ describe('slotState', () => {
         action: 'none',
         appearance: 'taken',
         reason: 'in-grace-window',
+        claimableAt: new Date(graceStartsAt.getTime() + minutes(30)),
       })
     })
 
@@ -174,6 +195,61 @@ describe('slotState', () => {
           }),
         ),
       ).toEqual({ action: 'none', appearance: 'past', reason: 'over' })
+    })
+
+    describe('R6 amendment: a claim gets 15 minutes, not 30', () => {
+      it('at 20 minutes elapsed, an original booking is still in its grace window', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(20))
+        expect(slotState(input({ booking: booking({ graceStartsAt }) })).action).toBe('none')
+      })
+
+      it('at 20 minutes elapsed, a claimed booking is already claimable', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(20))
+        expect(
+          slotState(input({ booking: booking({ graceStartsAt, isClaim: true }) })),
+        ).toEqual({ action: 'claim', appearance: 'claimable' })
+      })
+
+      it('a claimed booking is not yet claimable at exactly 15 minutes', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(15))
+        expect(
+          slotState(input({ booking: booking({ graceStartsAt, isClaim: true }) })).action,
+        ).toBe('none')
+      })
+
+      it('a claimed booking becomes claimable at 16 minutes', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(16))
+        expect(
+          slotState(input({ booking: booking({ graceStartsAt, isClaim: true }) })).action,
+        ).toBe('claim')
+      })
+
+      it('a claimed booking is still blocked well before 15 minutes', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(5))
+        expect(
+          slotState(input({ booking: booking({ graceStartsAt, isClaim: true }) })).action,
+        ).toBe('none')
+      })
+    })
+
+    describe('claimableAt (wall-clock visibility)', () => {
+      it('exposes the wall-clock time an original booking becomes claimable', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(20))
+        const state = slotState(input({ booking: booking({ graceStartsAt }) }))
+        expect(state.claimableAt).toEqual(new Date(graceStartsAt.getTime() + minutes(30)))
+      })
+
+      it('exposes a 15-minute wall-clock time for a claimed booking', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(5))
+        const state = slotState(input({ booking: booking({ graceStartsAt, isClaim: true }) }))
+        expect(state.claimableAt).toEqual(new Date(graceStartsAt.getTime() + minutes(15)))
+      })
+
+      it('omits claimableAt once the slot is already claimable', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(31))
+        const state = slotState(input({ booking: booking({ graceStartsAt }) }))
+        expect(state.claimableAt).toBeUndefined()
+      })
     })
   })
 

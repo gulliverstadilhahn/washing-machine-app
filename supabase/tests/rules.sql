@@ -455,6 +455,96 @@ select pg_temp.expect_fail(
   $$ select public.release_booking(pg_temp.ref('booking_a_finished')) $$);
 
 -- ---------------------------------------------------------------------------
+-- claim_slot — R6 amendment: claiming a claim (15 minute rule)
+-- ---------------------------------------------------------------------------
+--
+-- A claimed booking (original_apartment_id set) gets a shorter grace period
+-- than an original one: claiming already requires being physically present,
+-- so the claimer has less excuse for delay than someone who booked ahead.
+
+\echo ''
+\echo '== claim_slot: claiming a claim (R6 amendment, 15 minutes) =='
+
+-- A fourth resident, so this doesn't collide with the checks above.
+insert into public.apartments (number) values (904);
+
+do $seed_d$
+declare
+  v_user uuid := gen_random_uuid();
+begin
+  insert into auth.users (
+    instance_id, id, aud, role, email, encrypted_password,
+    email_confirmed_at, created_at, updated_at,
+    raw_app_meta_data, raw_user_meta_data
+  ) values (
+    '00000000-0000-0000-0000-000000000000', v_user, 'authenticated', 'authenticated',
+    'd@laundry.test', '', now(), now(), now(),
+    '{"provider":"email","providers":["email"]}', '{}'
+  );
+  perform pg_temp.put('user_d', v_user);
+  perform pg_temp.put('apt_904', (select id from public.apartments where number = 904));
+end;
+$seed_d$;
+
+select pg_temp.act_as(pg_temp.ref('user_d'));
+select pg_temp.expect_ok(
+  'D claims apartment 904',
+  $$ select public.claim_apartment(904, 'Resident D', '44444444') $$);
+
+-- A row shaped like claim_slot's own output (original_apartment_id set),
+-- backdated 20 minutes: past the 15 minute claim rule, but still inside the
+-- ordinary 30 minute rule — proving the shorter rule is the one actually
+-- applied, not a coincidence.
+do $craft$
+declare
+  v_id uuid;
+begin
+  insert into public.bookings (
+    apartment_id, date, slot_index, starts_at, ends_at, grace_starts_at,
+    status, original_apartment_id
+  ) values (
+    pg_temp.ref('apt_903'), public.copenhagen_today() - 26, 5,
+    now() - interval '20 minutes', now() + interval '2 hours 40 minutes',
+    now() - interval '20 minutes', 'active', pg_temp.ref('apt_901')
+  )
+  returning id into v_id;
+  perform pg_temp.put('booking_c_claim_20m', v_id);
+end;
+$craft$;
+
+select pg_temp.expect_ok(
+  'R6 amendment: D claims a claimed booking 20 minutes after it was claimed',
+  $$ select pg_temp.put('booking_d_claimed',
+       (public.claim_slot(pg_temp.ref('booking_c_claim_20m'))).id) $$);
+
+select pg_temp.expect_true(
+  'the chain carries forward: D''s new row also has original_apartment_id set',
+  (select original_apartment_id = pg_temp.ref('apt_903')
+     from public.bookings where id = pg_temp.ref('booking_d_claimed')));
+
+-- Negative: only 10 minutes elapsed on a claimed booking must still be refused.
+do $craft$
+declare
+  v_id uuid;
+begin
+  insert into public.bookings (
+    apartment_id, date, slot_index, starts_at, ends_at, grace_starts_at,
+    status, original_apartment_id
+  ) values (
+    pg_temp.ref('apt_903'), public.copenhagen_today() - 25, 1,
+    now() - interval '10 minutes', now() + interval '2 hours 50 minutes',
+    now() - interval '10 minutes', 'active', pg_temp.ref('apt_901')
+  )
+  returning id into v_id;
+  perform pg_temp.put('booking_c_claim_10m', v_id);
+end;
+$craft$;
+
+select pg_temp.expect_fail(
+  'R6 amendment: a claimed booking cannot be claimed again after only 10 minutes',
+  $$ select public.claim_slot(pg_temp.ref('booking_c_claim_10m')) $$);
+
+-- ---------------------------------------------------------------------------
 -- R8 — booking a free slot that is already in progress
 -- ---------------------------------------------------------------------------
 --

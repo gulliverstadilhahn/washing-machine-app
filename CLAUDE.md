@@ -72,6 +72,14 @@ in `SECURITY DEFINER` Postgres functions — that is the single source of truth.
   created for the claimer with `grace_starts_at = now()`. Claiming does **not** count
   against R1 — the claimer is taking a slot happening right now, not reserving a future
   one.
+- **R6 amendment — claims get a shorter grace period.** A booking created by
+  `claim_slot` (identifiable by `original_apartment_id is not null`) gets a 15-minute
+  grace period before a further apartment may claim it, not R6's 30 minutes — see
+  "Changes after initial build" for why. Because the fresh row `claim_slot` creates for
+  *any* claim always sets `original_apartment_id`, a claim-of-a-claim automatically gets
+  the 15-minute rule too, with no depth tracking needed.
+  `public.claim_grace_period()` in SQL is authoritative; `CLAIM_GRACE_MINUTES` in
+  `src/lib/constants.ts` mirrors it.
 - **R7 — Booking horizon.** Bookings may be made at most `BOOKING_HORIZON_DAYS = 14`
   days ahead. Defined once as a constant.
 - **R8 — Rebooking a freed slot.** A slot that is free but already in progress can be
@@ -91,6 +99,8 @@ RLS grants authenticated users `SELECT` on `apartments` and `bookings` and **not
 else** — there are no insert, update or delete policies at all. The frontend therefore
 physically cannot write to the tables; every mutation goes through an RPC:
 
+- `apartment_login_status(p_number int)` — is a number claimed yet? Callable by `anon`
+  too, since login happens before there's a session (see "Changes after initial build")
 - `claim_apartment(p_number int, p_name text, p_phone text)` — links the calling user to
   an apartment number and records how to reach them
 - `update_contact_details(p_name text, p_phone text)` — "My page" editing your own name
@@ -98,8 +108,10 @@ physically cannot write to the tables; every mutation goes through an RPC:
 - `book_slot(p_date date, p_slot int)` — R1, R7, R8, free-slot check, R5
 - `cancel_booking(p_id uuid)` — R3 + ownership
 - `release_booking(p_id uuid)` — R4 + ownership
-- `claim_slot(p_id uuid)` — R6, old row update + new row insert in one transaction
-- `admin_reassign_apartment(...)`, `admin_remove_account(...)` — admin-only
+- `claim_slot(p_id uuid)` — R6 (+ amendment below), old row update + new row insert in
+  one transaction
+- `admin_reset_apartment(p_number int)` — admin-only; clears a login and its contact
+  details so the number can be claimed again
 
 A partial unique index on `bookings (date, slot_index) where status = 'active'` is what
 makes two people booking the same slot in the same second impossible. Do not drop it.
@@ -296,3 +308,26 @@ app was actually running against a real Supabase project and got used.
   confirmed against the live database this way (an unauthenticated `book_slot` call
   correctly came back "You must be signed in." and rendered in the message banner); the
   claim/contact-link states still need a real second resident to verify against live data.
+- **Claimed bookings get a 15-minute grace period, not 30 (R6 amendment).** Confirmed
+  directly by the product owner after live testing surfaced a mismatch between what
+  people expect ("I can see nobody's washing, why can't I take it?") and R6 as
+  originally specified: someone claiming a slot was, by definition, already standing in
+  the laundry room to check no wash was running, so they have less excuse for delay than
+  someone who booked ahead and needs travel time. The original 30-minute rule for
+  *original* bookings is unchanged and confirmed correct. Enforced in
+  `supabase/migrations/20260805090700_claim_grace_period.sql` via a new
+  `public.claim_grace_period()` alongside `public.grace_period()`, chosen by
+  `case when original_apartment_id is not null` inside `claim_slot`. Mirrored
+  client-side in `src/lib/slotState.ts` (`SlotBooking.isClaim`) purely to decide what
+  the UI offers — the database re-validates on every claim.
+- **The grid now shows the actual wall-clock time a slot becomes claimable, and the time
+  your own mid-slot booking stops being protected**, instead of only a static "30
+  minutes after it starts" sentence. This was the real fix for the confusion above: the
+  30-minute protection on a fresh mid-slot booking was already correct, but invisible,
+  so nobody could see or trust it. `slotState` computes `claimableAt` from whichever
+  grace duration applies (30 or 15 minutes per the amendment above), and `BookingGrid`
+  renders it with the existing `formatTime` helper. Shown as a fixed time ("Claimable at
+  17:13" / "yours until 17:01"), not a ticking countdown — the grid already re-renders
+  every 30s via `useNow()`, so a wall clock stays fresh on that same cadence for free,
+  and a live mm:ss countdown would need its own re-render loop, which conflicts with the
+  "No animations" style rule for no real benefit.

@@ -14,6 +14,9 @@ export const BOOKING_HORIZON_DAYS = 14
 /** R6. Must match `public.grace_period()`. */
 export const GRACE_MINUTES = 30
 
+/** R6 amendment. Must match `public.claim_grace_period()`. */
+export const CLAIM_GRACE_MINUTES = 15
+
 /** The laundry room: everything you can book at once. */
 export const ROOM = { washingMachines: 3, tumbleDryers: 2 } as const
 

@@ -4,7 +4,7 @@ import { BookingGrid } from './components/BookingGrid'
 import { ClaimApartment } from './components/ClaimApartment'
 import { History } from './components/History'
 import { MyPage } from './components/MyPage'
-import { SignIn } from './components/SignIn'
+import { NumberLogin } from './components/NumberLogin'
 import { Note, Screen } from './components/ui'
 import { strings } from './lib/strings'
 import { supabase } from './lib/supabase'
@@ -15,10 +15,10 @@ import { useNow } from './lib/useNow'
 type Tab = 'book' | 'mypage' | 'history' | 'admin'
 
 export function App() {
-  const { ready, session, apartment, reloadApartment } = useAuth()
+  const { ready, session, apartment, apartmentLoading, reloadApartment } = useAuth()
   const now = useNow()
 
-  if (!ready) {
+  if (!ready || apartmentLoading) {
     return (
       <Screen>
         <div className="pt-10">
@@ -28,12 +28,11 @@ export function App() {
     )
   }
 
-  if (!session) return <SignIn />
+  if (!session) return <NumberLogin onAuthenticated={reloadApartment} />
 
   if (!apartment) {
     return (
       <ClaimApartment
-        email={session.user.email ?? ''}
         onClaimed={reloadApartment}
         onSignOut={() => void supabase.auth.signOut()}
       />

@@ -10,7 +10,7 @@
  * are no side effects. That is what makes it testable.
  */
 
-import { BOOKING_HORIZON_DAYS, GRACE_MINUTES } from './constants'
+import { BOOKING_HORIZON_DAYS, CLAIM_GRACE_MINUTES, GRACE_MINUTES } from './constants'
 import { addDays, type DateString } from './time'
 
 export type SlotAction = 'book' | 'cancel' | 'release' | 'claim' | 'none'
@@ -30,6 +30,11 @@ export type SlotState = {
   action: SlotAction
   appearance: SlotAppearance
   reason?: SlotBlockedReason
+  /** When this booking becomes (or became) claimable. Set whenever a grace
+   *  window is in play — for someone else's booking still in its window, and
+   *  for your own once it has started, so you can see how long you're
+   *  protected for. */
+  claimableAt?: Date
 }
 
 /** The active booking on a slot, if there is one. */
@@ -38,6 +43,9 @@ export type SlotBooking = {
   apartmentId: string
   apartmentNumber: number
   graceStartsAt: Date
+  /** R6 amendment: a claimed booking (original_apartment_id set) gets a
+   *  shorter grace period than an original one — see graceDurationMs. */
+  isClaim: boolean
 }
 
 export type SlotInput = {
@@ -54,7 +62,10 @@ export type SlotInput = {
   holdsFutureBooking: boolean
 }
 
-const graceMs = GRACE_MINUTES * 60 * 1000
+/** R6 amendment: a claim gets 15 minutes of protection, an original booking 30. */
+function graceDurationMs(booking: SlotBooking): number {
+  return (booking.isClaim ? CLAIM_GRACE_MINUTES : GRACE_MINUTES) * 60 * 1000
+}
 
 export function slotState(input: SlotInput): SlotState {
   const { now, booking, myApartmentId } = input
@@ -89,21 +100,28 @@ export function slotState(input: SlotInput): SlotState {
 
   if (booking.apartmentId === myApartmentId) {
     // R3 before it starts, R4 once it has.
-    return hasStarted
-      ? { action: 'release', appearance: 'yours' }
-      : { action: 'cancel', appearance: 'yours' }
+    if (!hasStarted) {
+      return { action: 'cancel', appearance: 'yours' }
+    }
+    // Reassurance: how long you're protected for, including when this booking
+    // is itself a claim (isClaim), which only gets the shorter window.
+    const claimableAt = new Date(booking.graceStartsAt.getTime() + graceDurationMs(booking))
+    return { action: 'release', appearance: 'yours', claimableAt }
   }
 
   // R6 — someone else's. Claimable only once the grace window has run out, and
   // only while the slot is still running. `isOver` is already handled above.
-  const claimableFrom = booking.graceStartsAt.getTime() + graceMs
-  if (now.getTime() > claimableFrom) {
+  const claimableAt = new Date(booking.graceStartsAt.getTime() + graceDurationMs(booking))
+  if (now.getTime() > claimableAt.getTime()) {
     return { action: 'claim', appearance: 'claimable' }
   }
 
-  return {
-    action: 'none',
-    appearance: 'taken',
-    reason: hasStarted ? 'in-grace-window' : 'not-yours',
+  // A not-yet-started booking held by someone else has nothing actionable to
+  // show a time for — claimableAt is only meaningful once the slot, and the
+  // grace window on it, are actually running.
+  if (!hasStarted) {
+    return { action: 'none', appearance: 'taken', reason: 'not-yours' }
   }
+
+  return { action: 'none', appearance: 'taken', reason: 'in-grace-window', claimableAt }
 }

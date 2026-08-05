@@ -8,6 +8,15 @@ export type AuthState = {
   session: Session | null
   /** Null until the resident has told us which apartment they are. */
   apartment: Apartment | null
+  /**
+   * True from the moment a session appears until we know whether it has an
+   * apartment. Login now happens inside the app (number + password) rather
+   * than via a page-reloading magic-link redirect, so a session can appear
+   * while the app is already sitting there — screens must key off this,
+   * not "apartment is null" alone, or claiming an apartment would flash the
+   * "which apartment are you?" screen before the real answer comes back.
+   */
+  apartmentLoading: boolean
   reloadApartment: () => Promise<void>
 }
 
@@ -15,6 +24,7 @@ export function useAuth(): AuthState {
   const [ready, setReady] = useState(false)
   const [session, setSession] = useState<Session | null>(null)
   const [apartment, setApartment] = useState<Apartment | null>(null)
+  const [apartmentLoading, setApartmentLoading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -38,37 +48,24 @@ export function useAuth(): AuthState {
   const loadApartment = useCallback(async () => {
     if (!userId) {
       setApartment(null)
+      setApartmentLoading(false)
       setReady(true)
       return
     }
+    setApartmentLoading(true)
     const { data } = await supabase
       .from('apartments')
       .select('*')
       .eq('user_id', userId)
       .maybeSingle<Apartment>()
     setApartment(data ?? null)
+    setApartmentLoading(false)
     setReady(true)
   }, [userId])
 
   useEffect(() => {
-    let cancelled = false
+    void loadApartment()
+  }, [loadApartment])
 
-    // Wait for getSession to settle before deciding there is no session, so the
-    // sign-in screen does not flash for someone who is already signed in.
-    supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return
-      if (!data.session && !userId) {
-        setApartment(null)
-        setReady(true)
-        return
-      }
-      void loadApartment()
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [userId, loadApartment])
-
-  return { ready, session, apartment, reloadApartment: loadApartment }
+  return { ready, session, apartment, apartmentLoading, reloadApartment: loadApartment }
 }

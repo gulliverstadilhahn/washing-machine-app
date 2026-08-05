@@ -26,17 +26,35 @@ export const strings = {
     admin: 'Admin',
   },
 
-  signIn: {
+  login: {
     title: 'Laundry room',
     intro: 'Book the laundry room for your apartment.',
-    emailLabel: 'Your email',
-    emailPlaceholder: 'you@example.com',
-    submit: 'Send me a login link',
-    sending: 'Sending…',
-    sent: (email: string) =>
-      `Check your inbox. We sent a login link to ${email}. It works once and expires after an hour.`,
-    sendAgain: 'Use a different email',
-    invalidEmail: 'Enter an email address.',
+
+    numberLabel: 'Apartment number',
+    continue: 'Continue',
+    checking: 'Checking…',
+    invalidNumber: 'Enter your apartment number.',
+    changeNumber: 'Not your apartment?',
+
+    signupIntro: (number: number) =>
+      `Apartment ${number} hasn't been claimed yet. Set a password to claim it.`,
+    nameLabel: 'Your name',
+    phoneLabel: 'Your phone number',
+    createPasswordLabel: 'Choose a password',
+    confirmPasswordLabel: 'Confirm password',
+    signupSubmit: 'Create account',
+    signupSaving: 'Creating…',
+    invalidPassword: 'Choose a password with at least 6 characters.',
+    passwordMismatch: 'Passwords do not match.',
+
+    loginIntro: (number: number) => `Welcome back, apartment ${number}.`,
+    passwordLabel: 'Password',
+    loginSubmit: 'Log in',
+    loginSaving: 'Logging in…',
+    wrongPassword: (number: number) =>
+      `Wrong password. If you've forgotten it, ask the admin to reset apartment ${number}.`,
+    forgotPassword: (number: number) =>
+      `Forgotten your password? Ask the admin to reset apartment ${number}.`,
   },
 
   claimApartment: {
@@ -51,7 +69,7 @@ export const strings = {
     invalidNumber: 'Enter your apartment number.',
     invalidName: 'Enter your name.',
     invalidPhone: 'Enter your phone number.',
-    wrongAccount: 'Signed in as {email}. Not you?',
+    wrongAccount: 'Not your apartment?',
   },
 
   grid: {
@@ -79,8 +97,10 @@ export const strings = {
 
     slotOver: 'This slot is over.',
     takenBy: (number: number) => `Apartment ${number} has this slot.`,
-    inGraceWindow:
-      'This slot is taken. If no wash is running, it can be claimed 30 minutes after it starts.',
+    inGraceWindow: (time: string) =>
+      `This slot is taken. If no wash is running, it can be claimed at ${time}.`,
+    protectedUntil: (time: string) =>
+      `This slot is yours until ${time}. After that, if no wash is running, it can be claimed.`,
     alreadyHaveFutureBooking:
       'You already have a booking coming up. Cancel it before booking another.',
     beyondHorizon: (days: number) => `You can only book up to ${days} days ahead.`,
@@ -147,21 +167,14 @@ export const strings = {
     title: 'Admin',
     intro: 'Only for whoever looks after the building.',
 
-    reassignTitle: 'Move an apartment to a different account',
-    reassignIntro:
-      'Use this when a resident moves out and a new one moves in, or when someone claimed the wrong number. Bookings already in the record keep the apartment they were made by.',
-    reassignApartmentLabel: 'Apartment number',
-    reassignEmailLabel: 'Email of the account to link',
-    reassignSubmit: 'Move apartment',
-    reassignDone: (number: number, email: string) => `Apartment ${number} is now linked to ${email}.`,
-
-    removeTitle: 'Remove an account',
-    removeIntro:
-      'Deletes the login. The apartment stays, and so does every booking ever made from it.',
-    removeEmailLabel: 'Email of the account to remove',
-    removeSubmit: 'Remove account',
-    removeConfirm: (email: string) => `Remove the account ${email}? This cannot be undone.`,
-    removeDone: (email: string) => `Removed ${email}.`,
+    resetTitle: 'Reset an apartment',
+    resetIntro:
+      'Use this when a resident moves out, someone claimed the wrong number, or a password is forgotten. It clears the login and the contact details, so the apartment can be claimed again — by the new resident, or the same one with a new password. Bookings already in the record keep the apartment they were made by.',
+    resetApartmentLabel: 'Apartment number',
+    resetSubmit: 'Reset apartment',
+    resetConfirm: (number: number) =>
+      `Reset apartment ${number}? Its login and contact details will be cleared, and it can be claimed again. This cannot be undone.`,
+    resetDone: (number: number) => `Apartment ${number} has been reset and can be claimed again.`,
   },
 
   contactDialog: {

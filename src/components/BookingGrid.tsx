@@ -8,6 +8,7 @@ import {
   copenhagenDate,
   formatDay,
   formatDayNumber,
+  formatTime,
   formatWeekday,
   slotBounds,
   slotLabel,
@@ -174,6 +175,7 @@ export function BookingGrid({ now, apartment }: { now: Date; apartment: Apartmen
                     apartmentId: booking.apartment_id,
                     apartmentNumber: holder.number,
                     graceStartsAt: new Date(booking.grace_starts_at),
+                    isClaim: Boolean(booking.original_apartment_id),
                   }
                 : null,
             myApartmentId: apartment.id,
@@ -234,12 +236,21 @@ export function BookingGrid({ now, apartment }: { now: Date; apartment: Apartmen
                       {blockedMessage(state, holder?.number)}
                     </p>
                   ) : (
-                    <Button
-                      onClick={() => activate(slotIndex, state, booking, holder?.number)}
-                      disabled={busy}
-                    >
-                      {state.action === 'book' && busy ? t.actionBooking : actionLabels[state.action]}
-                    </Button>
+                    <>
+                      {state.action === 'release' && state.claimableAt ? (
+                        <p className="mb-3 text-base text-slate-700">
+                          {t.protectedUntil(formatTime(state.claimableAt))}
+                        </p>
+                      ) : null}
+                      <Button
+                        onClick={() => activate(slotIndex, state, booking, holder?.number)}
+                        disabled={busy}
+                      >
+                        {state.action === 'book' && busy
+                          ? t.actionBooking
+                          : actionLabels[state.action]}
+                      </Button>
+                    </>
                   )}
                 </li>
               ) : null}
@@ -404,7 +415,7 @@ function blockedMessage(state: SlotState, holderNumber: number | undefined): str
     case 'already-holding-a-future-booking':
       return t.alreadyHaveFutureBooking
     case 'in-grace-window':
-      return t.inGraceWindow
+      return state.claimableAt ? t.inGraceWindow(formatTime(state.claimableAt)) : null
     case 'not-yours':
       return holderNumber === undefined ? null : t.takenBy(holderNumber)
     default:
