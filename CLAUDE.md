@@ -364,3 +364,32 @@ app was actually running against a real Supabase project and got used.
   them in English would have been a half-translation. `supabase/tests/rules.sql` needed
   no changes: its assertions only check whether a call succeeded or failed, never the
   exact wording of a failure.
+- **The real lock/apartment numbers are now seeded**, from the building's own posted
+  "Liste over vaskelåse": 3, 6, 7, 10, 14, 15, 16, 18, 19, 21, 23, 24, 25, 26, 27, 28, 30,
+  32, 34, 35, 36, 37, 38, 39, 40 (`supabase/migrations/20260805090900_real_lock_numbers.sql`).
+  The placeholder 1-24 contiguous range from Phase 2 was wrong — it was never based on
+  the real building. Unclaimed placeholder numbers that aren't real locks (2, 4, 5, 8, 9,
+  11, 12, 13, 20, 22) were removed directly via the Supabase Management API, not a
+  migration, since deleting specific data rows is a one-time cleanup, not a schema change.
+  **Apartments 1 and 17 are still a problem**: both are already claimed by real residents,
+  but neither is a real lock number. A migration can't fix this — deleting either would
+  violate the bookings foreign key (both already have real booking history) and R2
+  forbids losing that history anyway. Whoever is on 1 and 17 needs to say which real lock
+  number is actually theirs; the fix from there is `admin_reset_apartment` on the wrong
+  number once there's an admin, followed by them claiming the correct one. Nobody is
+  `is_admin` yet — that still needs setting once the right person is identified.
+- **The building's posted rules say 07:00–22:30**; the app's fifth slot ends at 22:00.
+  This is a real, known discrepancy — flagged in the Rules page copy itself rather than
+  silently resolved either way, since changing the slot schedule wasn't asked for and
+  wasn't part of this change.
+- **New Rules page** (`src/components/Rules.tsx`, `strings.rules`, "Regler" tab) is
+  static informational content — no data fetching, nothing enforced by the app beyond
+  what already is. It's deliberately split into "how to use the app" / "the app's actual
+  rules" (R1-R8 restated in plain language) / "the building's own house rules"
+  (reproduced from the posted sign, informational only, not app-enforced) / "what's new
+  because of the app", so residents can tell which parts the software actually governs
+  from which parts are just courtesy and cleaning instructions. The machine-fault contact
+  (a named resident's phone number) is reproduced as-is from the already-posted sign —
+  it's already public within the building to this exact audience, not a new disclosure.
+- With 5 tabs (admin users), the tab bar is visibly tighter at 375px but every label
+  still fits on one line with no overflow — checked directly, not just assumed.

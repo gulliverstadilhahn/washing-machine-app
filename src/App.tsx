@@ -5,6 +5,7 @@ import { ClaimApartment } from './components/ClaimApartment'
 import { History } from './components/History'
 import { MyPage } from './components/MyPage'
 import { NumberLogin } from './components/NumberLogin'
+import { Rules } from './components/Rules'
 import { Note, Screen } from './components/ui'
 import { strings } from './lib/strings'
 import { supabase } from './lib/supabase'
@@ -12,7 +13,7 @@ import type { Apartment } from './lib/types'
 import { useAuth } from './lib/useAuth'
 import { useNow } from './lib/useNow'
 
-type Tab = 'book' | 'mypage' | 'history' | 'admin'
+type Tab = 'book' | 'mypage' | 'history' | 'rules' | 'admin'
 
 export function App() {
   const { ready, session, apartment, apartmentLoading, reloadApartment } = useAuth()
@@ -59,6 +60,7 @@ function SignedIn({
     ['book', strings.nav.book],
     ['mypage', strings.nav.myPage],
     ['history', strings.nav.history],
+    ['rules', strings.nav.rules],
     ...(apartment.is_admin ? ([['admin', strings.nav.admin]] as Array<[Tab, string]>) : []),
   ]
 
@@ -72,6 +74,7 @@ function SignedIn({
             <MyPage apartment={apartment} onUpdated={onApartmentUpdated} />
           ) : null}
           {tab === 'history' ? <History now={now} /> : null}
+          {tab === 'rules' ? <Rules /> : null}
           {tab === 'admin' && apartment.is_admin ? <Admin /> : null}
 
           <button

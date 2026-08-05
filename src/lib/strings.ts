@@ -27,6 +27,7 @@ export const strings = {
     book: 'Book',
     myPage: 'Min side',
     history: 'Historik',
+    rules: 'Regler',
     admin: 'Admin',
   },
 
@@ -211,5 +212,55 @@ export const strings = {
 
     bookingsTitle: 'Dine bookinger',
     bookingsEmpty: 'Du har ingen bookinger endnu.',
+  },
+
+  rules: {
+    title: 'Regler og vejledning',
+
+    howToTitle: 'Sådan bruger du appen',
+    howTo: [
+      'Vælg en dato øverst på "Book"-siden.',
+      'Tryk på en ledig tid for at vælge den, og tryk derefter på "Book denne tid".',
+      'Din egen booking er markeret "Dig". Tryk på den for at annullere den (før den er startet) eller frigive den (efter den er startet).',
+      'Har en anden lejlighed en tid, kan du trykke "Kontakt" for at se navn og telefonnummer.',
+      'Under "Min side" kan du opdatere dit navn og telefonnummer og se alle dine egne bookinger.',
+      'Under "Historik" kan du se, hvornår hver lejlighed sidst har vasket, og en log over de seneste 60 dage.',
+    ] as const,
+
+    rulesTitle: 'Reglerne for booking',
+    rules: [
+      'Du kan kun have én kommende booking ad gangen. Når din tid er startet, kan du booke en ny.',
+      'Du kan annullere en booking, der ikke er startet endnu.',
+      'Er din tid startet, men du ikke skal bruge den, kan du frigive den — så er den ledig for andre resten af perioden.',
+      'En booket tid kan overtages af en anden, hvis der ikke kører en vask — tidligst 30 minutter efter tiden startede (eller efter du bookede den, hvis du booker midt i en periode).',
+      'En overtaget tid kan selv overtages igen efter kun 15 minutter — den, der overtog den, var jo allerede til stede og kunne selv tjekke, om der kørte en vask.',
+      'Du kan booke op til 14 dage frem.',
+      'Historikken slettes aldrig. Det er sådan, alle kan se, hvem der har brugt vaskerummet, og hvornår.',
+    ] as const,
+
+    houseRulesTitle: 'Regler for selve vaskekælderen',
+    houseRulesIntro:
+      'Vaskekælderens egne regler, opsat af bestyrelsen/viceværten. Appen håndhæver ikke disse — det er stadig op til alle at overholde dem.',
+    houseRules: [
+      'Vaskekælderen må kun bruges af tilmeldte andelshavere til vaskeordningen.',
+      'Vaskekælderen må benyttes i tidsrummet 07:00–22:30 (appens sidste tid slutter kl. 22:00).',
+      'Vis hensyn til den næste bruger — tøm maskinerne efter endt vask, også selvom du ikke bruger hele din tid.',
+      'Tørretiden fra den forrige vask overlapper med den næste vasketid, så du skal kunne lægge dit tøj sammen, selvom næste bruger er startet.',
+      'Vasketøj skal fjernes fra tørrerummene senest 24 timer efter ophængning. Tørrerummene må ikke aflåses torsdag, da de rengøres fredag.',
+      'Brugerne er fælles om at holde kælderen ren og pæn — brug kost og fejebakke ved behov, og tøm filter/vandskuffe på tørretumblerne efter endt tørring.',
+      'Ved gentagen misbrug kan bestyrelsen sanktionere eller udelukke brugere fra vaskekælderen.',
+    ] as const,
+
+    faultTitle: 'Fejl på maskinerne',
+    faultBody: 'Ved fejl på maskinerne, kontakt Jan i nr. 50.',
+    faultPhone: '26613589',
+
+    whatsNewTitle: 'Hvad er nyt med appen',
+    whatsNew: [
+      'I stedet for fysiske hængelåse på en tavle booker du nu direkte i appen.',
+      'Alle kan se, hvem der sidst har vasket — så er det synligt, hvis nogen ikke har vasket i lang tid, eller bruger vaskerummet meget.',
+      'Overtagelse af en glemt tid er nu tidsbegrænset og tydeligt markeret med en nedtælling, så alle kan se, hvornår det er i orden at overtage.',
+      'Historikken over bookinger bliver aldrig slettet.',
+    ] as const,
   },
 } as const
