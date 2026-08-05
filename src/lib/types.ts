@@ -7,6 +7,8 @@ export type Apartment = {
   number: number
   user_id: string | null
   is_admin: boolean
+  name: string | null
+  phone: string | null
 }
 
 export type Booking = {

@@ -127,3 +127,28 @@ const fullDayFormatter = new Intl.DateTimeFormat('en-GB', {
 export function formatFullDay(date: DateString): string {
   return fullDayFormatter.format(copenhagenWallTime(date, 12))
 }
+
+const weekdayFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: TIME_ZONE,
+  weekday: 'short',
+})
+
+const monthShortFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: TIME_ZONE,
+  month: 'short',
+})
+
+/** `Wed`, for the date strip. Noon avoids any midnight DST edge case. */
+export function formatWeekday(date: DateString): string {
+  return weekdayFormatter.format(copenhagenWallTime(date, 12))
+}
+
+/** `5`, the day-of-month number, for the date strip. */
+export function formatDayNumber(date: DateString): number {
+  return Number(date.slice(8, 10))
+}
+
+/** `Aug`, shown only when the strip crosses into a new month. */
+export function formatMonthShort(date: DateString): string {
+  return monthShortFormatter.format(copenhagenWallTime(date, 12))
+}

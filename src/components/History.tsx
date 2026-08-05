@@ -1,6 +1,6 @@
+import { describeBooking } from '../lib/describeBooking'
 import { strings } from '../lib/strings'
-import { formatFullDay, formatTime, slotLabel } from '../lib/time'
-import type { Apartment, Booking } from '../lib/types'
+import { formatFullDay, slotLabel } from '../lib/time'
 import { LOG_DAYS, useHistory, type LastWash } from '../lib/useHistory'
 import { ErrorNote, Note } from './ui'
 
@@ -44,7 +44,7 @@ export function History({ now }: { now: Date }) {
               <p className="text-base text-slate-500 tabular-nums">
                 {formatFullDay(booking.date)} · {slotLabel(booking.slot_index)}
               </p>
-              <p className="text-lg text-slate-900">{logLine(booking, apartmentsById)}</p>
+              <p className="text-lg text-slate-900">{describeBooking(booking, apartmentsById)}</p>
             </li>
           ))}
         </ul>
@@ -58,41 +58,4 @@ export function History({ now }: { now: Date }) {
 function lastWashText(row: LastWash): string {
   if (!row.last_wash_date || row.last_wash_slot_index === null) return t.lastWashNever
   return `${formatFullDay(row.last_wash_date)} · ${slotLabel(row.last_wash_slot_index)}`
-}
-
-/**
- * Every line must read plainly to someone standing in the laundry room. A
- * taken-over booking in particular has to name both apartments and the time,
- * because that is the record the whole app exists to keep.
- */
-function logLine(booking: Booking, apartmentsById: Map<string, Apartment>): string {
-  const holder = apartmentsById.get(booking.apartment_id)?.number
-  if (holder === undefined) return ''
-
-  switch (booking.status) {
-    case 'taken_over': {
-      const claimer = booking.taken_over_by_apartment_id
-        ? apartmentsById.get(booking.taken_over_by_apartment_id)?.number
-        : undefined
-      if (claimer === undefined || !booking.ended_at) return t.logBooked(holder)
-      return t.logTakenOver(holder, claimer, formatTime(booking.ended_at))
-    }
-
-    case 'cancelled':
-      return t.logCancelled(holder)
-
-    case 'released':
-      return booking.ended_at
-        ? t.logReleased(holder, formatTime(booking.ended_at))
-        : t.logBooked(holder)
-
-    case 'active': {
-      // An active booking carrying an original apartment is one that was claimed
-      // from someone else — say so, rather than showing it as an ordinary wash.
-      const takenFrom = booking.original_apartment_id
-        ? apartmentsById.get(booking.original_apartment_id)?.number
-        : undefined
-      return takenFrom === undefined ? t.logBooked(holder) : t.logClaimed(holder, takenFrom)
-    }
-  }
 }

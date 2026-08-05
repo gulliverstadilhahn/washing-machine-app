@@ -21,6 +21,7 @@ export const strings = {
 
   nav: {
     book: 'Book',
+    myPage: 'My page',
     history: 'History',
     admin: 'Admin',
   },
@@ -41,11 +42,15 @@ export const strings = {
   claimApartment: {
     title: 'Which apartment are you?',
     intro:
-      'Your apartment number is your identity here. Everyone in the building can see which apartment booked which slot.',
+      'Everyone in the building can see which apartment booked which slot, and your name and phone number so they can reach you about a booking.',
     numberLabel: 'Apartment number',
+    nameLabel: 'Your name',
+    phoneLabel: 'Your phone number',
     submit: 'That is my apartment',
     saving: 'Saving…',
     invalidNumber: 'Enter your apartment number.',
+    invalidName: 'Enter your name.',
+    invalidPhone: 'Enter your phone number.',
     wrongAccount: 'Signed in as {email}. Not you?',
   },
 
@@ -63,9 +68,17 @@ export const strings = {
     legendYours: 'Yours',
     legendTaken: 'Booked',
     legendClaimable: 'Claimable',
-    booking: 'Booking…',
-    slotOver: 'That slot is over.',
-    takenBy: (number: number) => `Apartment ${number} has booked this slot.`,
+
+    contactLink: 'Contact',
+
+    actionBook: 'Book this slot',
+    actionBooking: 'Booking…',
+    actionCancel: 'Cancel booking',
+    actionRelease: 'Release slot',
+    actionClaim: 'Claim this slot',
+
+    slotOver: 'This slot is over.',
+    takenBy: (number: number) => `Apartment ${number} has this slot.`,
     inGraceWindow:
       'This slot is taken. If no wash is running, it can be claimed 30 minutes after it starts.',
     alreadyHaveFutureBooking:
@@ -149,5 +162,26 @@ export const strings = {
     removeSubmit: 'Remove account',
     removeConfirm: (email: string) => `Remove the account ${email}? This cannot be undone.`,
     removeDone: (email: string) => `Removed ${email}.`,
+  },
+
+  contactDialog: {
+    title: (apartmentNumber: number) => `Contact apartment ${apartmentNumber}`,
+    close: 'Close',
+  },
+
+  myPage: {
+    title: 'My page',
+    subtitle: (apartmentNumber: number) => `Apartment ${apartmentNumber}`,
+
+    detailsTitle: 'Your contact details',
+    detailsIntro: 'Visible to everyone in the building, so they can reach you about a booking.',
+    nameLabel: 'Your name',
+    phoneLabel: 'Your phone number',
+    save: 'Save',
+    saving: 'Saving…',
+    saved: 'Saved.',
+
+    bookingsTitle: 'Your bookings',
+    bookingsEmpty: 'You have no bookings yet.',
   },
 } as const

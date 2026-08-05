@@ -132,34 +132,52 @@ select pg_temp.act_as(pg_temp.ref('user_a'));
 
 select pg_temp.expect_ok(
   'resident A claims apartment 901',
-  $$ select public.claim_apartment(901) $$);
+  $$ select public.claim_apartment(901, 'Resident A', '11111111') $$);
 
 select pg_temp.expect_true(
-  'apartment 901 is now linked to A',
-  (select user_id from public.apartments where number = 901) = pg_temp.ref('user_a'));
+  'apartment 901 is now linked to A, with contact details on record',
+  (select user_id = pg_temp.ref('user_a') and name = 'Resident A' and phone = '11111111'
+     from public.apartments where number = 901));
 
 select pg_temp.expect_fail(
   'A cannot claim a second apartment',
-  $$ select public.claim_apartment(902) $$);
+  $$ select public.claim_apartment(902, 'Resident A', '11111111') $$);
 
 select pg_temp.act_as(pg_temp.ref('user_b'));
 
 select pg_temp.expect_fail(
   'B cannot claim an apartment that is already linked',
-  $$ select public.claim_apartment(901) $$);
+  $$ select public.claim_apartment(901, 'Resident B', '22222222') $$);
 
 select pg_temp.expect_fail(
   'B cannot claim an apartment that does not exist',
-  $$ select public.claim_apartment(9999) $$);
+  $$ select public.claim_apartment(9999, 'Resident B', '22222222') $$);
+
+select pg_temp.expect_fail(
+  'claiming without a name is rejected',
+  $$ select public.claim_apartment(902, '  ', '22222222') $$);
+
+select pg_temp.expect_fail(
+  'claiming without a phone number is rejected',
+  $$ select public.claim_apartment(902, 'Resident B', '') $$);
 
 select pg_temp.expect_ok(
   'B claims apartment 902',
-  $$ select public.claim_apartment(902) $$);
+  $$ select public.claim_apartment(902, 'Resident B', '22222222') $$);
 
 select pg_temp.act_as(pg_temp.ref('user_c'));
 select pg_temp.expect_ok(
   'C claims apartment 903',
-  $$ select public.claim_apartment(903) $$);
+  $$ select public.claim_apartment(903, 'Resident C', '33333333') $$);
+
+select pg_temp.expect_ok(
+  'C updates their own contact details from My page',
+  $$ select public.update_contact_details('Resident C 2', '33333399') $$);
+
+select pg_temp.expect_true(
+  'the update is on record',
+  (select name = 'Resident C 2' and phone = '33333399'
+     from public.apartments where number = 903));
 
 -- ---------------------------------------------------------------------------
 -- book_slot — R1, R5, R7, R8

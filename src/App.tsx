@@ -3,6 +3,7 @@ import { Admin } from './components/Admin'
 import { BookingGrid } from './components/BookingGrid'
 import { ClaimApartment } from './components/ClaimApartment'
 import { History } from './components/History'
+import { MyPage } from './components/MyPage'
 import { SignIn } from './components/SignIn'
 import { Note, Screen } from './components/ui'
 import { strings } from './lib/strings'
@@ -11,7 +12,7 @@ import type { Apartment } from './lib/types'
 import { useAuth } from './lib/useAuth'
 import { useNow } from './lib/useNow'
 
-type Tab = 'book' | 'history' | 'admin'
+type Tab = 'book' | 'mypage' | 'history' | 'admin'
 
 export function App() {
   const { ready, session, apartment, reloadApartment } = useAuth()
@@ -39,16 +40,25 @@ export function App() {
     )
   }
 
-  return <SignedIn now={now} apartment={apartment} />
+  return <SignedIn now={now} apartment={apartment} onApartmentUpdated={reloadApartment} />
 }
 
-function SignedIn({ now, apartment }: { now: Date; apartment: Apartment }) {
+function SignedIn({
+  now,
+  apartment,
+  onApartmentUpdated,
+}: {
+  now: Date
+  apartment: Apartment
+  onApartmentUpdated: () => Promise<void> | void
+}) {
   const [tab, setTab] = useState<Tab>('book')
 
   // The check that matters is inside the admin database functions. Hiding the
   // tab is only tidiness.
   const tabs: Array<[Tab, string]> = [
     ['book', strings.nav.book],
+    ['mypage', strings.nav.myPage],
     ['history', strings.nav.history],
     ...(apartment.is_admin ? ([['admin', strings.nav.admin]] as Array<[Tab, string]>) : []),
   ]
@@ -59,6 +69,9 @@ function SignedIn({ now, apartment }: { now: Date; apartment: Apartment }) {
       <div className="pb-[calc(5rem+env(safe-area-inset-bottom))]">
         <Screen>
           {tab === 'book' ? <BookingGrid now={now} apartment={apartment} /> : null}
+          {tab === 'mypage' ? (
+            <MyPage apartment={apartment} onUpdated={onApartmentUpdated} />
+          ) : null}
           {tab === 'history' ? <History now={now} /> : null}
           {tab === 'admin' && apartment.is_admin ? <Admin /> : null}
 
@@ -80,7 +93,7 @@ function SignedIn({ now, apartment }: { now: Date; apartment: Apartment }) {
                 type="button"
                 onClick={() => setTab(id)}
                 aria-current={tab === id ? 'page' : undefined}
-                className={`min-h-16 w-full text-lg font-semibold ${
+                className={`min-h-16 w-full text-base font-semibold ${
                   tab === id
                     ? 'border-t-4 border-slate-900 text-slate-900'
                     : 'border-t-4 border-transparent text-slate-500'

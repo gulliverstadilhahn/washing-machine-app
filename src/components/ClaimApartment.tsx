@@ -6,8 +6,8 @@ import { Button, ErrorNote, Field, Heading, Note, Screen, TextInput } from './ui
 const t = strings.claimApartment
 
 /**
- * Shown once, after the first sign-in. An apartment number is the whole identity
- * — there are no names and no profiles — so this is the entire onboarding.
+ * Shown once, after the first sign-in. An apartment number, name and phone are
+ * the whole identity here — there are no profiles beyond this.
  */
 export function ClaimApartment({
   email,
@@ -19,20 +19,37 @@ export function ClaimApartment({
   onSignOut: () => void
 }) {
   const [number, setNumber] = useState('')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
-    const parsed = Number.parseInt(number.trim(), 10)
-    if (!Number.isInteger(parsed) || parsed <= 0) {
+    const parsedNumber = Number.parseInt(number.trim(), 10)
+    const trimmedName = name.trim()
+    const trimmedPhone = phone.trim()
+
+    if (!Number.isInteger(parsedNumber) || parsedNumber <= 0) {
       setError(t.invalidNumber)
+      return
+    }
+    if (!trimmedName) {
+      setError(t.invalidName)
+      return
+    }
+    if (!trimmedPhone) {
+      setError(t.invalidPhone)
       return
     }
 
     setSaving(true)
     setError(null)
-    const { error: rpcError } = await supabase.rpc('claim_apartment', { p_number: parsed })
+    const { error: rpcError } = await supabase.rpc('claim_apartment', {
+      p_number: parsedNumber,
+      p_name: trimmedName,
+      p_phone: trimmedPhone,
+    })
     setSaving(false)
 
     if (rpcError) {
@@ -58,6 +75,25 @@ export function ClaimApartment({
             autoComplete="off"
             value={number}
             onChange={(event) => setNumber(event.target.value)}
+          />
+        </Field>
+
+        <Field label={t.nameLabel}>
+          <TextInput
+            type="text"
+            autoComplete="name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </Field>
+
+        <Field label={t.phoneLabel}>
+          <TextInput
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
           />
         </Field>
 

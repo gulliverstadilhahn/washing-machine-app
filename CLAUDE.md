@@ -41,7 +41,11 @@ timezone**:
 | 4 | 16:00–19:00 |
 | 5 | 19:00–22:00 |
 
-An apartment's identity is its number. No names, no avatars, no profile pictures.
+An apartment's identity is its number, plus a contact name and phone number the
+resident sets themselves (added post-launch — see "Changes after initial build" below;
+the original spec here said "no names, no avatars, no profile pictures", and this is a
+deliberate, explicit reversal of that, not drift). Still no avatars, no profile
+pictures, no other profile fields.
 
 ## Rules
 
@@ -87,7 +91,10 @@ RLS grants authenticated users `SELECT` on `apartments` and `bookings` and **not
 else** — there are no insert, update or delete policies at all. The frontend therefore
 physically cannot write to the tables; every mutation goes through an RPC:
 
-- `claim_apartment(p_number int)` — links the calling user to an apartment number
+- `claim_apartment(p_number int, p_name text, p_phone text)` — links the calling user to
+  an apartment number and records how to reach them
+- `update_contact_details(p_name text, p_phone text)` — "My page" editing your own name
+  and phone later
 - `book_slot(p_date date, p_slot int)` — R1, R7, R8, free-slot check, R5
 - `cancel_booking(p_id uuid)` — R3 + ownership
 - `release_booking(p_id uuid)` — R4 + ownership
@@ -131,14 +138,17 @@ record it here rather than stopping to ask.
 
 - **Neither Docker nor `psql` is available on this machine**, and the Supabase CLI was
   not installed globally (it is now a dev dependency — use `npx supabase`). This means
-  `supabase/tests/rules.sql` is written and committed but has **not been executed**
-  against a database in the session that wrote it. Nothing in `supabase/migrations/`
-  has been applied either. Before trusting the rules end to end, run:
+  `supabase/tests/rules.sql` has never been executed anywhere — not locally (no Docker for
+  `supabase start`) and not against the live project either (it's a destructive test
+  script meant for a disposable local database, not something to run against real data).
+  Before trusting the rules end to end, get Docker on some machine and run:
   ```
   npx supabase start
   npm run db:test
   ```
-  Expect to fix small SQL slips on that first run.
+  Expect to fix small SQL slips on that first run. This is separate from the live
+  project's schema, which *is* up to date — see "Changes after initial build" — migrations
+  get applied there directly with `supabase db push --linked`, which doesn't need Docker.
 - **R1 only applies when the slot being booked is in the future.** R1 caps how many
   *future* bookings an apartment holds, so taking a slot that is already running (R8)
   is allowed even when the apartment already has its next wash booked — the same
@@ -230,3 +240,59 @@ record it here rather than stopping to ask.
 - The admin "reassign" flow has no unlink option. Removing the account frees the
   apartment (`user_id` is `on delete set null`), which covers the move-out case without a
   third operation — the spec says admin does these two things and nothing else.
+
+## Changes after initial build
+
+The six phases above were the original spec. This section records what changed once the
+app was actually running against a real Supabase project and got used.
+
+- **Live infrastructure is set up.** The app runs against a real Supabase project
+  (`twjvqtkquuzaiuidnqfo`), not a placeholder — all 6 migrations are applied there. GitHub
+  remote is `gulliverstadilhahn/washing-machine-app`, pushed on request only (local
+  commits happen freely; pushing to GitHub and deploying to Vercel both wait for an
+  explicit "push this" / "deploy this" from the user). Local dev still has neither Docker
+  nor `psql`, so `supabase/tests/rules.sql` is still unrun — pushes to the live project go
+  through `supabase db push --linked`, applying the same committed migration files, which
+  keeps to the "migrations only, no ad-hoc SQL" rule even without a local database.
+- **Contact details reverse the original "no names" rule, on explicit request.**
+  `apartments.name` and `apartments.phone` are set at claim time (both required) and
+  editable later from "My page". They're visible to every signed-in resident under the
+  same RLS policy that already exposed apartment numbers — no new privacy boundary was
+  needed. `admin_reassign_apartment` now clears `name`/`phone` on reassignment: leaving
+  the outgoing resident's contact details attached to an apartment they no longer live in
+  would be actively wrong, not merely stale.
+- **The booking grid is select-then-act, not tap-to-book.** Tapping a slot only selects
+  it (a ring highlight); the row expands to show either a single contextual action button
+  (`Book this slot` / `Cancel booking` / `Release slot` / `Claim this slot`, driven by
+  `slotState`'s existing `action` field) or, if none applies, the reason why. This was a
+  direct fix for booking being unclear: previously the first tap booked the slot
+  immediately, and it wasn't obvious anything had happened. Now booking takes two
+  deliberate taps, and after it succeeds the slot stays selected and the button changes
+  to "Cancel booking" — that state change is the confirmation, no toast needed. Cancel,
+  release and claim still open their existing confirmation dialogs on top of this; nothing
+  about those flows changed, only what triggers them.
+- **A "Contact" button sits next to any slot held by someone else** (not shown on your
+  own bookings), whenever that apartment has a name or phone on record. It's a sibling
+  button next to the row, not nested inside it — HTML doesn't allow nested `<button>`s,
+  which is what forced the row to stop being a single full-width button. Tapping it opens
+  `ContactDialog` with a `tel:` link. If an apartment has set neither field, the button is
+  simply omitted rather than shown disabled or opening an empty dialog.
+- **The grid replaced its 15-day scroll with a horizontal date strip plus one day's
+  slots.** A day chip strip (`Wed 5`, `Thu 6`, …) sits above a single day's 5 rows;
+  selecting a date resets any selected slot. This was chosen over a full month-grid
+  calendar as the simpler option that still satisfies "a calendar feature with all the
+  dates" — a month grid would need empty-cell padding and month labels for what is only
+  ever a 15-day window, and would cost more mobile width than it returns.
+- **New "My page" tab**, visible to everyone (not admin-gated): edit your own name/phone
+  via `update_contact_details`, and see every booking your apartment has ever made
+  (`useMyBookings` — no date window, unlike the building-wide 60-day log, since it's
+  scoped to one apartment's own history). Its booking-row text reuses
+  `describeBooking` (`src/lib/describeBooking.ts`), extracted from `History.tsx` so both
+  screens describe a booking the same way instead of drifting apart.
+- Visual verification for this round used a temporary auth bypass (a hardcoded preview
+  apartment swapped into `App.tsx`, reverted immediately after) since real interactive
+  states — an occupied slot, a claimable one — need actual booking rows, and nobody had
+  completed a real login yet. The RPC calls, error surfacing, and refresh cycle were
+  confirmed against the live database this way (an unauthenticated `book_slot` call
+  correctly came back "You must be signed in." and rendered in the message banner); the
+  claim/contact-link states still need a real second resident to verify against live data.
