@@ -405,3 +405,13 @@ app was actually running against a real Supabase project and got used.
   env vars in the Vercel project (same values as local `.env`). No Supabase redirect-URL
   configuration was needed for the new domain — that was only ever relevant to the old
   magic-link flow, fully removed earlier, and number+password auth has no redirects.
+- **Live URL is now https://vaskerummet.vercel.app** (aliased from the original
+  `washing-maching-app.vercel.app`, which still works too — a typo in the auto-generated
+  project name from `vercel link`, not worth fixing since the alias solves the naming
+  problem directly). Hit a real gotcha adding it: Vercel's deployment protection
+  (`ssoProtection: all_except_custom_domains`, on by default) exempts only a project's
+  own auto-assigned domain, not additional `.vercel.app` aliases — so the new alias
+  redirected to a Vercel login wall until `ssoProtection` was cleared via the Vercel API
+  (`PATCH /v9/projects/:id { "ssoProtection": null }`; no CLI command exposes this
+  directly). Necessary here since residents have no Vercel account and must never need
+  one.
