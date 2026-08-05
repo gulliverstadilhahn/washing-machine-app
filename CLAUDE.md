@@ -122,9 +122,13 @@ inside the database functions, never in the browser.
 ## Style
 
 Plain and legible. Large tap targets — this gets used one-handed while carrying a
-laundry basket. Must work on a small phone. No animations. UI text is English for now
-but every user-facing string lives in `src/lib/strings.ts` so it can be translated to
-Danish in one pass.
+laundry basket. Must work on a small phone. UI text is **Danish** — translated in one
+pass, exactly as planned, once real residents needed it (see "Changes after initial
+build"). Every user-facing string still lives in one place, `src/lib/strings.ts`; the
+database's own exception messages (shown verbatim in the UI) are Danish too, in
+`supabase/migrations/20260805090800_danish_messages.sql`. One exception to "no
+animations": a live mm:ss countdown was added deliberately for the claim-grace window,
+overriding an earlier static-time design call — see below.
 
 ## Out of scope
 
@@ -331,3 +335,32 @@ app was actually running against a real Supabase project and got used.
   every 30s via `useNow()`, so a wall clock stays fresh on that same cadence for free,
   and a live mm:ss countdown would need its own re-render loop, which conflicts with the
   "No animations" style rule for no real benefit.
+- **A claimed slot now gets its own distinct appearance and a live countdown, reversing
+  the earlier static-time design call.** Confirmed directly: a slot someone just claimed
+  looked identical to an ordinary booking, which hid the fact that it's a temporary hold
+  nobody has acted on yet. New `SlotAppearance` value `claim-pending` (violet, distinct
+  from the grey "taken" and amber "claimable") shows on the row itself — not only once
+  expanded — with a badge and a live `Countdown` (`src/components/ui.tsx`, its own 1s
+  `setInterval`, scoped to just that component rather than dropping the whole grid to a
+  1s render cadence). The claimer sees an urgent "start your wash within" + countdown in
+  place of the calmer "yours until HH:MM" reassurance used for an ordinary booking. This
+  intentionally supersedes the earlier "static wall-clock time, not a ticking countdown"
+  decision above — that reasoning (no per-second re-render, stays inside "no
+  animations") was sound for the general case, but the building explicitly wanted the
+  ticking urgency for this specific, short-lived, action-required state.
+- **Fixed a real inconsistency the claim dialog would otherwise have shown**: its
+  legally-precise wording used to hardcode "30 minutes" regardless of whether the claim
+  was of an original booking (30 min) or of an earlier claim (15 min, the R6 amendment
+  above). `ClaimDialog` now takes a `graceMinutes` prop computed at the point a claim is
+  offered (`booking.original_apartment_id ? CLAIM_GRACE_MINUTES : GRACE_MINUTES` in
+  `BookingGrid.tsx`), so the dialog always states the number that actually applied.
+- **Everything user-facing is now Danish** — the building's residents are Danish, and
+  this was the explicit intended use of `src/lib/strings.ts` from the start ("keep all
+  user-facing strings in one file so it can be translated to Danish in one pass"). Done
+  in one pass, as planned. The database's own `raise exception` messages are Danish too
+  (`supabase/migrations/20260805090800_danish_messages.sql`, a `create or replace` of
+  every function that only touches message text, never logic or errcodes) — those reach
+  residents verbatim through the same error banner as any other RPC failure, so leaving
+  them in English would have been a half-translation. `supabase/tests/rules.sql` needed
+  no changes: its assertions only check whether a call succeeded or failed, never the
+  exact wording of a failure.

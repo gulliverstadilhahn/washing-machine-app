@@ -1,5 +1,11 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { BOOKING_HORIZON_DAYS, SLOT_INDEXES, type SlotIndex } from '../lib/constants'
+import {
+  BOOKING_HORIZON_DAYS,
+  CLAIM_GRACE_MINUTES,
+  GRACE_MINUTES,
+  SLOT_INDEXES,
+  type SlotIndex,
+} from '../lib/constants'
 import { slotState, type SlotAction, type SlotAppearance, type SlotState } from '../lib/slotState'
 import { strings } from '../lib/strings'
 import { errorMessage, supabase } from '../lib/supabase'
@@ -18,7 +24,7 @@ import type { Apartment, Booking } from '../lib/types'
 import { slotKey, useBookings } from '../lib/useBookings'
 import { ClaimDialog } from './ClaimDialog'
 import { ContactDialog } from './ContactDialog'
-import { Button, Dialog, ErrorNote, Note } from './ui'
+import { Button, Countdown, Dialog, ErrorNote, Note } from './ui'
 
 const t = strings.grid
 
@@ -27,6 +33,7 @@ const appearanceClasses: Record<SlotAppearance, string> = {
   free: 'bg-white border-slate-300',
   yours: 'bg-sky-100 border-sky-700',
   taken: 'bg-slate-100 border-slate-300',
+  'claim-pending': 'bg-violet-100 border-violet-700',
   claimable: 'bg-amber-100 border-amber-700',
   past: 'bg-slate-50 border-slate-200 text-slate-400',
 }
@@ -41,7 +48,7 @@ const actionLabels: Record<SlotAction, string> = {
 
 type PendingAction =
   | { kind: 'cancel' | 'release'; booking: Booking; date: DateString; slotIndex: SlotIndex }
-  | { kind: 'claim'; booking: Booking; apartmentNumber: number }
+  | { kind: 'claim'; booking: Booking; apartmentNumber: number; graceMinutes: number }
 
 type RpcResult = PromiseLike<{ error: unknown }>
 
@@ -123,7 +130,11 @@ export function BookingGrid({ now, apartment }: { now: Date; apartment: Apartmen
 
       case 'claim':
         if (booking && holderNumber !== undefined) {
-          setPending({ kind: 'claim', booking, apartmentNumber: holderNumber })
+          // R6 amendment: the dialog's legal-sounding wording must say the
+          // duration that actually applied — 15 minutes for a claim, 30 for
+          // an original booking — never a hardcoded number.
+          const graceMinutes = booking.original_apartment_id ? CLAIM_GRACE_MINUTES : GRACE_MINUTES
+          setPending({ kind: 'claim', booking, apartmentNumber: holderNumber, graceMinutes })
         }
         return
 
@@ -183,6 +194,7 @@ export function BookingGrid({ now, apartment }: { now: Date; apartment: Apartmen
           })
 
           const isMine = booking?.apartment_id === apartment.id
+          const isClaimBooking = Boolean(booking?.original_apartment_id)
           const isSelected = selectedSlot === slotIndex
           const who = holder ? (isMine ? t.yours : t.apartment(holder.number)) : t.free
           const canContact = Boolean(
@@ -198,7 +210,11 @@ export function BookingGrid({ now, apartment }: { now: Date; apartment: Apartmen
                   onClick={() => toggleSlot(slotIndex)}
                   aria-pressed={isSelected}
                   aria-label={`${slotLabel(slotIndex)}, ${who}${
-                    state.appearance === 'claimable' ? `, ${t.claimable}` : ''
+                    state.appearance === 'claimable'
+                      ? `, ${t.claimable}`
+                      : state.appearance === 'claim-pending'
+                        ? `, ${t.claimPendingBadge}`
+                        : ''
                   }`}
                   className={`flex min-h-16 flex-1 items-center justify-between rounded-lg border-2 px-4 text-left ${appearanceClasses[state.appearance]} ${isSelected ? 'ring-2 ring-slate-900' : ''}`}
                 >
@@ -209,6 +225,11 @@ export function BookingGrid({ now, apartment }: { now: Date; apartment: Apartmen
                     {state.appearance === 'claimable' ? (
                       <span className="rounded bg-amber-700 px-2 py-1 text-sm font-bold text-white">
                         {t.claimable}
+                      </span>
+                    ) : null}
+                    {state.appearance === 'claim-pending' && state.claimableAt ? (
+                      <span className="rounded bg-violet-700 px-2 py-1 text-sm font-bold text-white">
+                        {t.claimPendingBadge} · <Countdown target={state.claimableAt} />
                       </span>
                     ) : null}
                     <span className="text-lg font-semibold">{who}</span>
@@ -233,11 +254,18 @@ export function BookingGrid({ now, apartment }: { now: Date; apartment: Apartmen
                 <li className="rounded-lg border-2 border-slate-300 bg-slate-50 p-4">
                   {state.action === 'none' ? (
                     <p className="text-base text-slate-700">
-                      {blockedMessage(state, holder?.number)}
+                      {state.appearance === 'claim-pending' && state.claimableAt && holder
+                        ? t.claimPendingMessage(holder.number, formatTime(state.claimableAt))
+                        : blockedMessage(state, holder?.number)}
                     </p>
                   ) : (
                     <>
-                      {state.action === 'release' && state.claimableAt ? (
+                      {state.action === 'release' && state.claimableAt && isClaimBooking ? (
+                        <p className="mb-3 text-base font-semibold text-violet-800">
+                          {t.startWashWithin} <Countdown target={state.claimableAt} />
+                        </p>
+                      ) : null}
+                      {state.action === 'release' && state.claimableAt && !isClaimBooking ? (
                         <p className="mb-3 text-base text-slate-700">
                           {t.protectedUntil(formatTime(state.claimableAt))}
                         </p>
@@ -353,6 +381,7 @@ function PendingDialog({
     return (
       <ClaimDialog
         apartmentNumber={pending.apartmentNumber}
+        graceMinutes={pending.graceMinutes}
         busy={busy}
         onCancel={onDismiss}
         onConfirm={onConfirm}
@@ -388,6 +417,7 @@ function Legend() {
     ['free', t.legendFree],
     ['yours', t.legendYours],
     ['taken', t.legendTaken],
+    ['claim-pending', t.legendClaimPending],
     ['claimable', t.legendClaimable],
   ]
   return (

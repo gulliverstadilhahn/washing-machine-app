@@ -1,200 +1,215 @@
 /**
  * Every user-facing string in the app.
  *
- * English for now. When the building wants Danish, this is the only file that
- * needs translating — no i18n framework, just one pass through here. Keep it
- * that way: no user-visible text anywhere else.
+ * In Danish — the building's residents are Danish, so this whole file was
+ * translated in one pass, exactly as the original design intended ("keep all
+ * user-facing strings in one file so it can be translated to Danish in one
+ * pass"). Comments and key names stay in English for the codebase; only the
+ * values are Danish.
  *
- * Messages that come back from the database (rule violations) are shown as-is;
- * they are written in the migrations and would need translating there too.
+ * Messages that come back from the database (rule violations) are shown as-is
+ * — they are written in the migrations (in Danish too, see
+ * `supabase/migrations/20260805090800_danish_messages.sql`) and would need
+ * translating there if that ever changes.
  */
 
 export const strings = {
-  appName: 'Laundry',
+  appName: 'Vaskerummet',
 
   common: {
-    cancel: 'Cancel',
-    loading: 'Loading…',
-    signOut: 'Sign out',
-    somethingWentWrong: 'Something went wrong. Try again.',
+    cancel: 'Annuller',
+    loading: 'Indlæser…',
+    signOut: 'Log ud',
+    somethingWentWrong: 'Der gik noget galt. Prøv igen.',
   },
 
   nav: {
     book: 'Book',
-    myPage: 'My page',
-    history: 'History',
+    myPage: 'Min side',
+    history: 'Historik',
     admin: 'Admin',
   },
 
   login: {
-    title: 'Laundry room',
-    intro: 'Book the laundry room for your apartment.',
+    title: 'Vaskerummet',
+    intro: 'Book vaskerummet til din lejlighed.',
 
-    numberLabel: 'Apartment number',
-    continue: 'Continue',
-    checking: 'Checking…',
-    invalidNumber: 'Enter your apartment number.',
-    changeNumber: 'Not your apartment?',
+    numberLabel: 'Lejlighedsnummer',
+    continue: 'Fortsæt',
+    checking: 'Tjekker…',
+    invalidNumber: 'Indtast dit lejlighedsnummer.',
+    changeNumber: 'Ikke din lejlighed?',
 
     signupIntro: (number: number) =>
-      `Apartment ${number} hasn't been claimed yet. Set a password to claim it.`,
-    nameLabel: 'Your name',
-    phoneLabel: 'Your phone number',
-    createPasswordLabel: 'Choose a password',
-    confirmPasswordLabel: 'Confirm password',
-    signupSubmit: 'Create account',
-    signupSaving: 'Creating…',
-    invalidPassword: 'Choose a password with at least 6 characters.',
-    passwordMismatch: 'Passwords do not match.',
+      `Lejlighed ${number} er ikke registreret endnu. Opret en adgangskode for at registrere den.`,
+    nameLabel: 'Dit navn',
+    phoneLabel: 'Dit telefonnummer',
+    createPasswordLabel: 'Vælg en adgangskode',
+    confirmPasswordLabel: 'Bekræft adgangskode',
+    signupSubmit: 'Opret konto',
+    signupSaving: 'Opretter…',
+    invalidPassword: 'Vælg en adgangskode med mindst 6 tegn.',
+    passwordMismatch: 'Adgangskoderne stemmer ikke overens.',
 
-    loginIntro: (number: number) => `Welcome back, apartment ${number}.`,
-    passwordLabel: 'Password',
-    loginSubmit: 'Log in',
-    loginSaving: 'Logging in…',
+    loginIntro: (number: number) => `Velkommen tilbage, lejlighed ${number}.`,
+    passwordLabel: 'Adgangskode',
+    loginSubmit: 'Log ind',
+    loginSaving: 'Logger ind…',
     wrongPassword: (number: number) =>
-      `Wrong password. If you've forgotten it, ask the admin to reset apartment ${number}.`,
+      `Forkert adgangskode. Hvis du har glemt den, så bed admin om at nulstille lejlighed ${number}.`,
     forgotPassword: (number: number) =>
-      `Forgotten your password? Ask the admin to reset apartment ${number}.`,
+      `Glemt din adgangskode? Bed admin om at nulstille lejlighed ${number}.`,
   },
 
   claimApartment: {
-    title: 'Which apartment are you?',
+    title: 'Hvilken lejlighed er du?',
     intro:
-      'Everyone in the building can see which apartment booked which slot, and your name and phone number so they can reach you about a booking.',
-    numberLabel: 'Apartment number',
-    nameLabel: 'Your name',
-    phoneLabel: 'Your phone number',
-    submit: 'That is my apartment',
-    saving: 'Saving…',
-    invalidNumber: 'Enter your apartment number.',
-    invalidName: 'Enter your name.',
-    invalidPhone: 'Enter your phone number.',
-    wrongAccount: 'Not your apartment?',
+      'Alle i bygningen kan se, hvilken lejlighed der har booket hvilken tid, samt dit navn og telefonnummer, så de kan kontakte dig om en booking.',
+    numberLabel: 'Lejlighedsnummer',
+    nameLabel: 'Dit navn',
+    phoneLabel: 'Dit telefonnummer',
+    submit: 'Det er min lejlighed',
+    saving: 'Gemmer…',
+    invalidNumber: 'Indtast dit lejlighedsnummer.',
+    invalidName: 'Indtast dit navn.',
+    invalidPhone: 'Indtast dit telefonnummer.',
+    wrongAccount: 'Ikke din lejlighed?',
   },
 
   grid: {
-    title: 'Laundry room',
-    subtitle: (apartmentNumber: number) => `You are apartment ${apartmentNumber}`,
-    free: 'Free',
-    apartment: (number: number) => `Apt ${number}`,
-    yours: 'You',
-    claimable: 'Claimable',
-    today: 'Today',
-    tomorrow: 'Tomorrow',
-    horizonNote: (days: number) => `You can book up to ${days} days ahead.`,
-    legendFree: 'Free',
-    legendYours: 'Yours',
-    legendTaken: 'Booked',
-    legendClaimable: 'Claimable',
+    title: 'Vaskerummet',
+    subtitle: (apartmentNumber: number) => `Du er lejlighed ${apartmentNumber}`,
+    free: 'Ledig',
+    apartment: (number: number) => `Lejl. ${number}`,
+    yours: 'Dig',
+    claimable: 'Kan overtages',
+    today: 'I dag',
+    tomorrow: 'I morgen',
+    horizonNote: (days: number) => `Du kan booke op til ${days} dage frem.`,
+    legendFree: 'Ledig',
+    legendYours: 'Din',
+    legendTaken: 'Booket',
+    legendClaimPending: 'Midlertidigt overtaget',
+    legendClaimable: 'Kan overtages',
 
-    contactLink: 'Contact',
+    contactLink: 'Kontakt',
 
-    actionBook: 'Book this slot',
-    actionBooking: 'Booking…',
-    actionCancel: 'Cancel booking',
-    actionRelease: 'Release slot',
-    actionClaim: 'Claim this slot',
+    actionBook: 'Book denne tid',
+    actionBooking: 'Booker…',
+    actionCancel: 'Annuller booking',
+    actionRelease: 'Frigiv tiden',
+    actionClaim: 'Overtag denne tid',
 
-    slotOver: 'This slot is over.',
-    takenBy: (number: number) => `Apartment ${number} has this slot.`,
+    slotOver: 'Denne tid er overstået.',
+    takenBy: (number: number) => `Lejlighed ${number} har denne tid.`,
     inGraceWindow: (time: string) =>
-      `This slot is taken. If no wash is running, it can be claimed at ${time}.`,
+      `Denne tid er booket. Hvis der ikke kører en vask, kan den overtages kl. ${time}.`,
+
+    /** The compact badge shown directly on a claimed-but-not-yet-due slot. */
+    claimPendingBadge: 'Overtaget',
+    /** Shown in the expanded panel for everyone except the claimer themselves. */
+    claimPendingMessage: (apartmentNumber: number, time: string) =>
+      `Lejlighed ${apartmentNumber} overtog denne tid for nylig og har indtil kl. ${time} til at starte vasken.`,
+    /** Shown to the claimer themselves, paired with a live countdown. */
+    startWashWithin: 'Du har overtaget denne tid. Start din vask inden for:',
+
     protectedUntil: (time: string) =>
-      `This slot is yours until ${time}. After that, if no wash is running, it can be claimed.`,
+      `Denne tid er din indtil kl. ${time}. Herefter kan den overtages, hvis der ikke kører en vask.`,
     alreadyHaveFutureBooking:
-      'You already have a booking coming up. Cancel it before booking another.',
-    beyondHorizon: (days: number) => `You can only book up to ${days} days ahead.`,
+      'Du har allerede en kommende booking. Annuller den, før du booker en ny.',
+    beyondHorizon: (days: number) => `Du kan kun booke op til ${days} dage frem.`,
   },
 
   confirm: {
-    cancelTitle: 'Cancel this booking?',
-    cancelBody: (slot: string, day: string) =>
-      `${day}, ${slot}. The slot becomes free for someone else.`,
-    cancelConfirm: 'Cancel the booking',
-    cancelKeep: 'Keep it',
+    cancelTitle: 'Annuller denne booking?',
+    cancelBody: (slot: string, day: string) => `${day}, ${slot}. Tiden bliver ledig for andre.`,
+    cancelConfirm: 'Annuller bookingen',
+    cancelKeep: 'Behold den',
 
-    releaseTitle: 'Release this slot?',
+    releaseTitle: 'Frigiv denne tid?',
     releaseBody: (slot: string, day: string) =>
-      `${day}, ${slot}. The slot has started, so it stays in the record as released by you. Someone else can use the rest of the period.`,
-    releaseConfirm: 'Release the slot',
-    releaseKeep: 'Keep it',
+      `${day}, ${slot}. Tiden er startet, så den bliver i historikken som frigivet af dig. Andre kan bruge resten af perioden.`,
+    releaseConfirm: 'Frigiv tiden',
+    releaseKeep: 'Behold den',
   },
 
   /**
    * Deliberate wording — do not soften it. The app cannot see the machines, so
    * the only thing standing between a claim and a stolen wash is the person
-   * reading this.
+   * reading this. `minutes` is 15 or 30 depending on whether this is a claim
+   * of an original booking or of an earlier claim (R6 amendment) — never
+   * hardcode a number in this text.
    */
   claimDialog: {
-    title: 'Take this slot?',
-    body: (apartmentNumber: number) =>
+    title: 'Overtag denne tid?',
+    body: (apartmentNumber: number, minutes: number) =>
       [
-        `This slot belongs to apartment ${apartmentNumber}, and 30 minutes have passed since it started.`,
-        'If you are in the laundry room and can see that no wash is running, you can take the slot for the rest of the period.',
-        'The app cannot see whether the machines are running. Only claim this if you have actually checked. Your claim is recorded and visible to everyone in the building.',
+        `Denne tid tilhører lejlighed ${apartmentNumber}, og der er gået ${minutes} minutter, siden den blev booket.`,
+        'Hvis du er i vaskerummet og kan se, at der ikke kører en vask, kan du overtage tiden for resten af perioden.',
+        'Appen kan ikke se, om maskinerne kører. Overtag kun tiden, hvis du faktisk har tjekket. Din overtagelse registreres og er synlig for alle i bygningen.',
       ] as const,
-    cancel: 'Cancel',
-    confirm: 'I have checked — claim the slot',
-    claiming: 'Claiming…',
+    cancel: 'Annuller',
+    confirm: 'Jeg har tjekket — overtag tiden',
+    claiming: 'Overtager…',
   },
 
   history: {
-    title: 'History',
+    title: 'Historik',
 
-    lastWashTitle: 'Last wash by apartment',
-    lastWashIntro:
-      'Oldest first, so apartments that have not washed for a long time are at the top.',
-    lastWashNever: 'No wash on record',
+    lastWashTitle: 'Seneste vask pr. lejlighed',
+    lastWashIntro: 'Ældste først, så lejligheder der ikke har vasket i lang tid, står øverst.',
+    lastWashNever: 'Ingen vask registreret',
 
     logTitle: 'Log',
-    logIntro: 'Everything from the last 60 days, newest first.',
-    logEmpty: 'Nothing in the last 60 days.',
+    logIntro: 'Alt fra de seneste 60 dage, nyeste først.',
+    logEmpty: 'Intet inden for de seneste 60 dage.',
     logRetention: (days: number) =>
-      `Nothing is ever deleted. This page shows the last ${days} days.`,
+      `Intet bliver nogensinde slettet. Denne side viser de seneste ${days} dage.`,
 
-    /** e.g. "Apt 14 — taken over by apt 7 at 07:45" */
+    /** e.g. "Lejl. 14 — overtaget af lejl. 7 kl. 07:45" */
     logTakenOver: (apartmentNumber: number, byNumber: number, atTime: string) =>
-      `Apt ${apartmentNumber} — taken over by apt ${byNumber} at ${atTime}`,
-    logCancelled: (apartmentNumber: number) => `Apt ${apartmentNumber} — cancelled`,
+      `Lejl. ${apartmentNumber} — overtaget af lejl. ${byNumber} kl. ${atTime}`,
+    logCancelled: (apartmentNumber: number) => `Lejl. ${apartmentNumber} — annulleret`,
     logReleased: (apartmentNumber: number, atTime: string) =>
-      `Apt ${apartmentNumber} — released at ${atTime}`,
+      `Lejl. ${apartmentNumber} — frigivet kl. ${atTime}`,
     logClaimed: (apartmentNumber: number, fromNumber: number) =>
-      `Apt ${apartmentNumber} — claimed from apt ${fromNumber}`,
-    logBooked: (apartmentNumber: number) => `Apt ${apartmentNumber}`,
+      `Lejl. ${apartmentNumber} — overtaget fra lejl. ${fromNumber}`,
+    logBooked: (apartmentNumber: number) => `Lejl. ${apartmentNumber}`,
   },
 
   admin: {
     title: 'Admin',
-    intro: 'Only for whoever looks after the building.',
+    intro: 'Kun for den, der administrerer bygningen.',
 
-    resetTitle: 'Reset an apartment',
+    resetTitle: 'Nulstil en lejlighed',
     resetIntro:
-      'Use this when a resident moves out, someone claimed the wrong number, or a password is forgotten. It clears the login and the contact details, so the apartment can be claimed again — by the new resident, or the same one with a new password. Bookings already in the record keep the apartment they were made by.',
-    resetApartmentLabel: 'Apartment number',
-    resetSubmit: 'Reset apartment',
+      'Brug denne funktion, når en beboer flytter ud, nogen har registreret det forkerte nummer, eller en adgangskode er glemt. Den rydder login og kontaktoplysninger, så lejligheden kan registreres igen — af den nye beboer, eller den samme med en ny adgangskode. Bookinger i historikken beholder den lejlighed, de blev lavet af.',
+    resetApartmentLabel: 'Lejlighedsnummer',
+    resetSubmit: 'Nulstil lejlighed',
     resetConfirm: (number: number) =>
-      `Reset apartment ${number}? Its login and contact details will be cleared, and it can be claimed again. This cannot be undone.`,
-    resetDone: (number: number) => `Apartment ${number} has been reset and can be claimed again.`,
+      `Nulstil lejlighed ${number}? Login og kontaktoplysninger bliver ryddet, og lejligheden kan registreres igen. Dette kan ikke fortrydes.`,
+    resetDone: (number: number) =>
+      `Lejlighed ${number} er blevet nulstillet og kan registreres igen.`,
   },
 
   contactDialog: {
-    title: (apartmentNumber: number) => `Contact apartment ${apartmentNumber}`,
-    close: 'Close',
+    title: (apartmentNumber: number) => `Kontakt lejlighed ${apartmentNumber}`,
+    close: 'Luk',
   },
 
   myPage: {
-    title: 'My page',
-    subtitle: (apartmentNumber: number) => `Apartment ${apartmentNumber}`,
+    title: 'Min side',
+    subtitle: (apartmentNumber: number) => `Lejlighed ${apartmentNumber}`,
 
-    detailsTitle: 'Your contact details',
-    detailsIntro: 'Visible to everyone in the building, so they can reach you about a booking.',
-    nameLabel: 'Your name',
-    phoneLabel: 'Your phone number',
-    save: 'Save',
-    saving: 'Saving…',
-    saved: 'Saved.',
+    detailsTitle: 'Dine kontaktoplysninger',
+    detailsIntro: 'Synlig for alle i bygningen, så de kan kontakte dig om en booking.',
+    nameLabel: 'Dit navn',
+    phoneLabel: 'Dit telefonnummer',
+    save: 'Gem',
+    saving: 'Gemmer…',
+    saved: 'Gemt.',
 
-    bookingsTitle: 'Your bookings',
-    bookingsEmpty: 'You have no bookings yet.',
+    bookingsTitle: 'Dine bookinger',
+    bookingsEmpty: 'Du har ingen bookinger endnu.',
   },
 } as const

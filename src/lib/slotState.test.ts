@@ -230,6 +230,18 @@ describe('slotState', () => {
           slotState(input({ booking: booking({ graceStartsAt, isClaim: true }) })).action,
         ).toBe('none')
       })
+
+      it('a blocked claim gets its own appearance, distinct from an ordinary booking', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(5))
+        expect(
+          slotState(input({ booking: booking({ graceStartsAt, isClaim: true }) })).appearance,
+        ).toBe('claim-pending')
+      })
+
+      it('a blocked original booking keeps the ordinary appearance', () => {
+        const graceStartsAt = new Date(NOW.getTime() - minutes(20))
+        expect(slotState(input({ booking: booking({ graceStartsAt }) })).appearance).toBe('taken')
+      })
     })
 
     describe('claimableAt (wall-clock visibility)', () => {

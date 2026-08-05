@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
 /**
  * Shared bits of chrome. Everything here is sized for a thumb: this app is used
@@ -72,6 +72,33 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
       {...props}
       className="min-h-14 w-full rounded-lg border-2 border-slate-300 px-4 text-lg text-slate-900 focus:border-slate-900 focus:outline-none"
     />
+  )
+}
+
+/**
+ * A live mm:ss countdown to a target time. The one place in the app that ticks
+ * every second rather than every 30s (see `useNow`) — scoped to just this
+ * component so the rest of the grid isn't re-rendering that often. Purely
+ * informational: the actual claim/release rules are re-evaluated on the
+ * slower 30s clock, so the number can sit at 0:00 for a few seconds before the
+ * cell's real state catches up, which is fine — nothing here is authoritative.
+ */
+export function Countdown({ target }: { target: Date }) {
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const remainingSeconds = Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000))
+  const minutes = Math.floor(remainingSeconds / 60)
+  const seconds = remainingSeconds % 60
+
+  return (
+    <span className="tabular-nums">
+      {minutes}:{String(seconds).padStart(2, '0')}
+    </span>
   )
 }
 

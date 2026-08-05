@@ -11,11 +11,14 @@ const t = strings.claimDialog
  */
 export function ClaimDialog({
   apartmentNumber,
+  graceMinutes,
   busy,
   onCancel,
   onConfirm,
 }: {
   apartmentNumber: number
+  /** 15 for a claim of a claim, 30 for an original booking — R6 amendment. */
+  graceMinutes: number
   busy: boolean
   onCancel: () => void
   onConfirm: () => void
@@ -23,7 +26,7 @@ export function ClaimDialog({
   return (
     <Dialog title={t.title} onDismiss={onCancel}>
       <div className="space-y-3">
-        {t.body(apartmentNumber).map((paragraph) => (
+        {t.body(apartmentNumber, graceMinutes).map((paragraph) => (
           <p key={paragraph} className="text-base leading-relaxed text-slate-700">
             {paragraph}
           </p>

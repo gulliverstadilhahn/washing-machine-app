@@ -24,7 +24,7 @@ export type SlotBlockedReason =
   | 'not-yours'
 
 /** How the cell is coloured. */
-export type SlotAppearance = 'free' | 'yours' | 'taken' | 'claimable' | 'past'
+export type SlotAppearance = 'free' | 'yours' | 'taken' | 'claim-pending' | 'claimable' | 'past'
 
 export type SlotState = {
   action: SlotAction
@@ -104,9 +104,12 @@ export function slotState(input: SlotInput): SlotState {
       return { action: 'cancel', appearance: 'yours' }
     }
     // Reassurance: how long you're protected for, including when this booking
-    // is itself a claim (isClaim), which only gets the shorter window.
+    // is itself a claim (isClaim), which only gets the shorter window. Once
+    // that window has actually passed there is nothing left to reassure about.
     const claimableAt = new Date(booking.graceStartsAt.getTime() + graceDurationMs(booking))
-    return { action: 'release', appearance: 'yours', claimableAt }
+    return now.getTime() < claimableAt.getTime()
+      ? { action: 'release', appearance: 'yours', claimableAt }
+      : { action: 'release', appearance: 'yours' }
   }
 
   // R6 — someone else's. Claimable only once the grace window has run out, and
@@ -123,5 +126,14 @@ export function slotState(input: SlotInput): SlotState {
     return { action: 'none', appearance: 'taken', reason: 'not-yours' }
   }
 
-  return { action: 'none', appearance: 'taken', reason: 'in-grace-window', claimableAt }
+  // A claim (isClaim) gets its own distinct appearance: it reads as a normal,
+  // unremarkable booking otherwise, but it is a temporary hold someone hasn't
+  // acted on yet, not a settled booking — that difference is worth seeing at
+  // a glance, not just when the cell is expanded.
+  return {
+    action: 'none',
+    appearance: booking.isClaim ? 'claim-pending' : 'taken',
+    reason: 'in-grace-window',
+    claimableAt,
+  }
 }
