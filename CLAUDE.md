@@ -16,7 +16,10 @@ drying rooms. **This app never erases history.**
 - Supabase CLI — every schema change is a migration file in `supabase/migrations/`,
   never ad-hoc SQL typed into a console
 - vitest for tests
-- Deploy target is Vercel. **Do not deploy from an agent session.**
+- Deploy target is Vercel — live at https://washing-maching-app.vercel.app, deployed on
+  explicit request (see "Changes after initial build"). The Vercel project is Git-linked
+  to `gulliverstadilhahn/washing-machine-app`, so pushes to `main` auto-deploy; a manual
+  `vercel --prod` was only needed for the first deploy.
 
 Environment variables live in `.env` (git-ignored; `.env.example` is committed):
 
@@ -393,3 +396,12 @@ app was actually running against a real Supabase project and got used.
   it's already public within the building to this exact audience, not a new disclosure.
 - With 5 tabs (admin users), the tab bar is visibly tighter at 375px but every label
   still fits on one line with no overflow — checked directly, not just assumed.
+- **Deployed to Vercel on explicit request**, reversing the earlier "do not deploy from
+  an agent session" caution from Phase 1 — that was a default-caution placeholder, not a
+  standing prohibition, and the user asked directly. `vercel link` auto-detected the Vite
+  config and connected the existing GitHub repo, so the Vercel project now auto-deploys
+  on every push to `main`; the one manual `vercel --prod --yes` was only to get the first
+  deployment live. `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` are set as Production
+  env vars in the Vercel project (same values as local `.env`). No Supabase redirect-URL
+  configuration was needed for the new domain — that was only ever relevant to the old
+  magic-link flow, fully removed earlier, and number+password auth has no redirects.

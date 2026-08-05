@@ -18,3 +18,5 @@ coverage
 
 supabase/.temp
 supabase/.branches
+.vercel
+.env*
