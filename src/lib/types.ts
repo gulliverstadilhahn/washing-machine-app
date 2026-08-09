@@ -9,6 +9,8 @@ export type Apartment = {
   is_admin: boolean
   name: string | null
   phone: string | null
+  /** False for a leftover row that isn't one of the building's real lock numbers. */
+  active: boolean
 }
 
 export type Booking = {

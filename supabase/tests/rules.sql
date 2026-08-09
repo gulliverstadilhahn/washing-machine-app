@@ -153,6 +153,19 @@ select pg_temp.expect_fail(
   'B cannot claim an apartment that does not exist',
   $$ select public.claim_apartment(9999, 'Resident B', '22222222') $$);
 
+-- An inactive apartment (a leftover row that isn't a real lock number) must
+-- behave exactly like a number that was never seeded — for claiming and for
+-- checking login status alike.
+insert into public.apartments (number, active) values (905, false);
+
+select pg_temp.expect_fail(
+  'an inactive apartment cannot be claimed',
+  $$ select public.claim_apartment(905, 'Resident B', '22222222') $$);
+
+select pg_temp.expect_fail(
+  'apartment_login_status refuses an inactive apartment too',
+  $$ select public.apartment_login_status(905) $$);
+
 select pg_temp.expect_fail(
   'claiming without a name is rejected',
   $$ select public.claim_apartment(902, '  ', '22222222') $$);
@@ -595,11 +608,12 @@ begin
   raise notice 'PASS  R8: a free slot already in progress can still be booked';
   raise notice 'PASS  R1: taking an in-progress slot is not blocked by a future booking';
 
-  -- R5, second branch: booked mid-slot, so the grace window opens immediately.
-  if v_booking.grace_starts_at <> now() then
-    raise exception 'FAIL  R5 — a booking made mid-slot should have grace_starts_at = now()';
+  -- R5 amendment: grace always tracks the slot's own start now, even for a
+  -- booking made mid-slot — no more exception for booking time.
+  if v_booking.grace_starts_at <> v_booking.starts_at then
+    raise exception 'FAIL  R5 amendment — grace_starts_at should always equal starts_at';
   end if;
-  raise notice 'PASS  R5: a booking made mid-slot has grace_starts_at = now()';
+  raise notice 'PASS  R5 amendment: grace_starts_at always equals starts_at, mid-slot or not';
 
   perform public.release_booking(v_booking.id);
   perform pg_temp.act_as(pg_temp.ref('user_b'));

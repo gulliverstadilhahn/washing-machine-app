@@ -69,6 +69,13 @@ in `SECURITY DEFINER` Postgres functions — that is the single source of truth.
 - **R5 — Grace window.** Every booking gets `grace_starts_at = greatest(starts_at, now())`
   at creation. Book ahead and the grace window starts when the slot starts; book
   mid-slot and it starts immediately.
+- **R5 amendment — grace always starts at the slot's start.** `grace_starts_at` is now
+  always exactly `starts_at`, never `now()` — confirmed directly, replacing R5's original
+  two-branch definition with one fixed rule: a 13:00–16:00 slot is claimable at 13:31,
+  whether it was booked yesterday or five minutes ago. See "Changes after initial build"
+  for the one real tradeoff this has. `claim_slot` is untouched by this — a claim's own
+  grace still anchors to the moment of claiming, since by definition a claim only happens
+  well after the slot's start; there's no "slot start" left to anchor to there.
 - **R6 — Claiming.** Another apartment may claim a booking when *all* of: it is
   `active`; `now() > grace_starts_at + 30 minutes`; `now() < ends_at`. The old booking
   becomes `taken_over` with the claimer recorded on it, and a fresh `active` booking is
@@ -415,3 +422,20 @@ app was actually running against a real Supabase project and got used.
   (`PATCH /v9/projects/:id { "ssoProtection": null }`; no CLI command exposes this
   directly). Necessary here since residents have no Vercel account and must never need
   one.
+- **R5 amendment: grace now always anchors to the slot's start, not the booking
+  moment.** Confirmed directly, with a worked example (13:00–16:00 is claimable at
+  13:31, full stop). Simpler than the original two-branch rule, but has one real
+  tradeoff worth remembering: a slot that's been sitting free and gets booked (R8) more
+  than 30 minutes after its own start now has little or no fresh protection — it can
+  become claimable almost immediately, since grace no longer resets to the booking
+  moment. Flagged directly before building it; confirmed as the intended, simpler
+  behavior. `book_slot` no longer uses `greatest()` at all — it just inserts
+  `grace_starts_at = v_starts_at`. `claim_slot` is deliberately unchanged.
+- **Apartments now have an `active` flag**, closing a real gap: apartments 1 and 17
+  (test claims made before the real lock-number list existed) couldn't be fully deleted
+  — R2's own trigger correctly refuses to delete a booking whose slot already started,
+  test data or not — so they remained claimable, empty rows indistinguishable from a
+  real lock number. `active` (default `true`, set `false` for 1 and 17) is checked by
+  `claim_apartment` and `apartment_login_status`, which now treat an inactive apartment
+  exactly as if it were never seeded. History is untouched — this only gates the
+  login/claim path, not what already happened under those numbers.

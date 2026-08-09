@@ -177,11 +177,26 @@ describe('slotState', () => {
       })
     })
 
-    it('R5: a booking made mid-slot gets its own fresh grace window', () => {
-      // Booked 5 minutes ago in a slot that started an hour ago: not claimable,
-      // because grace_starts_at is the booking time, not the slot time.
-      const graceStartsAt = new Date(NOW.getTime() - minutes(5))
-      expect(slotState(input({ booking: booking({ graceStartsAt }) })).action).toBe('none')
+    it('R5 amendment: a 13:00-16:00 slot is not yet claimable at 13:30, and is at 13:31', () => {
+      // book_slot now always sets grace_starts_at = starts_at — no more
+      // exception for a booking made mid-slot. slotState itself only ever
+      // reads whatever grace_starts_at it's given, so this is really testing
+      // that the boundary lines up with the slot's own wall-clock start.
+      const startsAt = new Date('2026-08-05T11:00:00Z') // 13:00 Copenhagen
+      const endsAt = new Date('2026-08-05T14:00:00Z') // 16:00 Copenhagen
+      const graceStartsAt = startsAt
+
+      const at1330 = new Date(startsAt.getTime() + minutes(30))
+      expect(
+        slotState(input({ now: at1330, startsAt, endsAt, booking: booking({ graceStartsAt }) }))
+          .action,
+      ).toBe('none')
+
+      const at1331 = new Date(startsAt.getTime() + minutes(31))
+      expect(
+        slotState(input({ now: at1331, startsAt, endsAt, booking: booking({ graceStartsAt }) }))
+          .action,
+      ).toBe('claim')
     })
 
     it('R6: a slot that is over cannot be claimed however long the grace ran out ago', () => {
